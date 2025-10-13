@@ -53,7 +53,18 @@
     <div class="card">
       <div class="h3">Ergomate — IoT‑Based Ergonomic Office System</div>
       <p class="p">2nd place at SLIoT 2018 (Sri Lanka's largest IoT competition). Smart office system monitoring posture, hydration, air quality, and drowsiness via webcam—with user alerts and HR analytics dashboard. Built during internship at Millennium IT ESP.</p>
-      <div class="gallery"><img src="/assets/img/ergomate-dashboard.jpg" alt="Ergomate dashboard"></div>
+      <div class="carousel" id="ergomate-carousel">
+        <div class="carousel-container">
+          <img src="/assets/img/ergomate-team.jpg" alt="Ergomate team with award" class="active">
+          <img src="/assets/img/ergomate-dashboard.jpg" alt="Ergomate dashboard">
+          <img src="/assets/img/ergomate-workspace.jpg" alt="Ergomate workspace">
+          <img src="/assets/img/ergomate-chair.jpg" alt="Ergonomic chair">
+          <img src="/assets/img/ergomate-hardware.jpg" alt="IoT hardware">
+          <button class="carousel-arrow left" onclick="moveCarousel('ergomate-carousel', -1)">‹</button>
+          <button class="carousel-arrow right" onclick="moveCarousel('ergomate-carousel', 1)">›</button>
+        </div>
+        <div class="carousel-dots" id="ergomate-carousel-dots"></div>
+      </div>
     </div>
   </div>
 </div>
@@ -93,8 +104,55 @@ const updateThemeIcon = (isLight) => {
   }
 };
 
+// Carousel functionality
+let carouselIndexes = {};
+
+const initCarousel = (carouselId) => {
+  carouselIndexes[carouselId] = 0;
+  const carousel = document.getElementById(carouselId);
+  const images = carousel.querySelectorAll('.carousel-container img');
+  const dotsContainer = document.getElementById(`${carouselId}-dots`);
+  
+  // Create dots
+  images.forEach((_, index) => {
+    const dot = document.createElement('div');
+    dot.className = `carousel-dot ${index === 0 ? 'active' : ''}`;
+    dot.onclick = () => goToSlide(carouselId, index);
+    dotsContainer.appendChild(dot);
+  });
+};
+
+const moveCarousel = (carouselId, direction) => {
+  const carousel = document.getElementById(carouselId);
+  const images = carousel.querySelectorAll('.carousel-container img');
+  const dots = carousel.querySelectorAll('.carousel-dot');
+  
+  images[carouselIndexes[carouselId]].classList.remove('active');
+  dots[carouselIndexes[carouselId]].classList.remove('active');
+  
+  carouselIndexes[carouselId] = (carouselIndexes[carouselId] + direction + images.length) % images.length;
+  
+  images[carouselIndexes[carouselId]].classList.add('active');
+  dots[carouselIndexes[carouselId]].classList.add('active');
+};
+
+const goToSlide = (carouselId, index) => {
+  const carousel = document.getElementById(carouselId);
+  const images = carousel.querySelectorAll('.carousel-container img');
+  const dots = carousel.querySelectorAll('.carousel-dot');
+  
+  images[carouselIndexes[carouselId]].classList.remove('active');
+  dots[carouselIndexes[carouselId]].classList.remove('active');
+  
+  carouselIndexes[carouselId] = index;
+  
+  images[carouselIndexes[carouselId]].classList.add('active');
+  dots[carouselIndexes[carouselId]].classList.add('active');
+};
+
 // Run on page load
 initTheme();
+initCarousel('ergomate-carousel');
 </script>
 
 </body>
