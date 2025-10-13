@@ -82,3 +82,18 @@ small.muted{color:var(--muted)}
 .carousel-dots{display:flex;gap:8px;justify-content:center;margin-top:12px}
 .carousel-dot{width:8px;height:8px;border-radius:50%;background:var(--muted);opacity:0.4;cursor:pointer;transition:all 0.2s}
 .carousel-dot.active{opacity:1;background:var(--brand)}
+.profile-section{display:flex;gap:40px;align-items:flex-start;margin-bottom:30px}
+.profile-left{flex-shrink:0;text-align:center}
+.profile-photo{width:200px;height:200px;border-radius:50%;object-fit:cover;object-position:center;border:3px solid var(--brand);margin-bottom:16px;-webkit-backface-visibility:hidden;backface-visibility:hidden;transform:translateZ(0);will-change:transform}
+.profile-name{font-size:22px;font-weight:700;margin:8px 0 4px}
+.profile-title{color:var(--muted);font-size:16px;margin:4px 0}
+.social-links{display:flex;gap:12px;justify-content:center;margin-top:16px}
+.social-links a{color:var(--muted);transition:all 0.2s}
+.social-links a:hover{color:var(--brand);transform:translateY(-2px)}
+.social-links svg{width:24px;height:24px}
+.interests-list{list-style:none;padding:0;margin:12px 0}
+.interests-list li{padding:6px 0;color:var(--text)}
+.interests-list li:before{content:"•";color:var(--brand);font-weight:bold;display:inline-block;width:1em;margin-left:-1em}
+.education-item{margin:16px 0;padding-left:20px;position:relative}
+.education-item:before{content:"🎓";position:absolute;left:0;top:2px}
+@media (max-width:900px){.profile-section{flex-direction:column;align-items:center;text-align:center}}
