@@ -22,8 +22,13 @@
   </url>
   <url>
     <loc>https://rashindaw.github.io/blogs.html</loc>
-    <lastmod>2026-02-10</lastmod>
+    <lastmod>2026-02-11</lastmod>
     <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://rashindaw.github.io/blog-gnn-time-series.html</loc>
+    <lastmod>2026-02-11</lastmod>
+    <priority>0.8</priority>
   </url>
   <url>
     <loc>https://rashindaw.github.io/books.html</loc>

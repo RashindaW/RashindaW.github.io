@@ -1,0 +1,1021 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>When to Use GNNs for Time-Series: A Researcher's Guide — Rashinda Wijethunga</title>
+<link rel="stylesheet" href="/assets/css/styles.css">
+<meta name="description" content="A comprehensive guide to Graph Neural Networks for time-series analysis — covering mathematical foundations, architecture selection, framework comparison, and practical recommendations for researchers.">
+<meta property="og:type" content="article">
+<meta property="og:title" content="When to Use GNNs for Time-Series: A Researcher's Guide">
+<meta property="og:description" content="A comprehensive guide to Graph Neural Networks for time-series analysis — covering mathematical foundations, architecture selection, framework comparison, and practical recommendations.">
+<meta property="og:image" content="https://rashindaw.github.io/assets/img/profile.jpg">
+<meta property="og:url" content="https://rashindaw.github.io/blog-gnn-time-series.html">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="When to Use GNNs for Time-Series: A Researcher's Guide">
+<meta name="twitter:description" content="A comprehensive guide to Graph Neural Networks for time-series analysis — covering mathematical foundations, architecture selection, and framework comparison.">
+<meta name="twitter:image" content="https://rashindaw.github.io/assets/img/profile.jpg">
+<script>
+MathJax = {
+  tex: {
+    inlineMath: [['\\(', '\\)']],
+    displayMath: [['$$', '$$']],
+    tags: 'ams'
+  },
+  svg: { fontCache: 'global' }
+};
+</script>
+<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+</head>
+<body>
+<a href="#main-content" class="skip-link">Skip to content</a>
+
+<div class="container">
+  <div class="nav">
+    <div style="display:flex;gap:10px;align-items:center">
+      <a href="/" class="badge" aria-label="Home">RW</a>
+      <strong>Rashinda Wijethunga</strong>
+    </div>
+    <div style="display:flex;gap:8px;align-items:center">
+      <a href="/about.html">About</a>
+      <a href="/projects.html">Projects</a>
+      <a href="/publications.html">Publications</a>
+      <a href="/blogs.html">Blogs</a>
+      <a href="/assets/cv/Rashinda.pdf" class="btn">Download CV</a>
+      <button class="theme-toggle" onclick="toggleTheme()" aria-label="Toggle theme">
+        <svg class="sun-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+        </svg>
+        <svg class="moon-icon" style="display:none" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+        </svg>
+      </button>
+    </div>
+  </div>
+</div>
+
+<div class="container" id="main-content">
+<article class="blog-article">
+
+<!-- ═══════════════════ HEADER ═══════════════════ -->
+<header style="margin-bottom:40px">
+  <div class="blog-date">February 2026 &middot; 28 min read</div>
+  <h1 style="font-size:32px;line-height:1.2;margin:8px 0 12px;font-weight:800">Graph Neural Networks for Time-Series Analysis: When to Use Them and How to Choose Your Framework</h1>
+  <p style="font-size:18px;color:var(--muted);margin:0 0 12px">A practical guide from spectral theory to PyTorch Geometric Temporal &mdash; for researchers beginning their journey with graph-based temporal models.</p>
+  <div class="blog-tags">
+    <span class="tech-badge">GNN</span>
+    <span class="tech-badge">Time-Series</span>
+    <span class="tech-badge">Spatio-Temporal</span>
+    <span class="tech-badge">Deep Learning</span>
+    <span class="tech-badge">Tutorial</span>
+  </div>
+</header>
+
+<!-- ═══════════════════ TABLE OF CONTENTS ═══════════════════ -->
+<nav class="blog-toc" aria-label="Table of contents">
+  <div class="blog-toc-title">Contents</div>
+  <ul>
+    <li><a href="#intro">1. Introduction</a></li>
+    <li><a href="#when">2. When Should You Reach for a GNN?</a></li>
+    <li>
+      <a href="#math">3. Mathematical Foundations</a>
+      <ul>
+        <li><a href="#math-graphs">3.1 Graphs and Graph Signals</a></li>
+        <li><a href="#math-laplacian">3.2 The Graph Laplacian</a></li>
+        <li><a href="#math-gft">3.3 Graph Fourier Transform</a></li>
+        <li><a href="#math-filter">3.4 Spectral Filtering and the ChebNet Trick</a></li>
+        <li><a href="#math-gcn">3.5 From Spectral Filters to GCN</a></li>
+      </ul>
+    </li>
+    <li>
+      <a href="#temporal">4. Adding the Temporal Dimension</a>
+      <ul>
+        <li><a href="#temporal-mp">4.1 Spatial-Temporal Message Passing</a></li>
+        <li><a href="#temporal-strategies">4.2 Temporal Modeling Strategies</a></li>
+      </ul>
+    </li>
+    <li>
+      <a href="#architectures">5. Landmark Architectures</a>
+      <ul>
+        <li><a href="#arch-stgcn">5.1 STGCN</a></li>
+        <li><a href="#arch-dcrnn">5.2 DCRNN</a></li>
+        <li><a href="#arch-gwnet">5.3 Graph WaveNet</a></li>
+        <li><a href="#arch-mtgnn">5.4 MTGNN</a></li>
+        <li><a href="#arch-stemgnn">5.5 StemGNN</a></li>
+      </ul>
+    </li>
+    <li><a href="#frameworks">6. Choosing Your Framework</a></li>
+    <li><a href="#datasets">7. Benchmark Datasets</a></li>
+    <li><a href="#practical">8. Practical Recommendations</a></li>
+    <li><a href="#references">References</a></li>
+  </ul>
+</nav>
+
+<!-- ═══════════════════ 1. INTRODUCTION ═══════════════════ -->
+<section id="intro">
+<h2>1. Introduction</h2>
+
+<p>Consider a network of 200 temperature sensors deployed across a supermarket refrigeration system. Each sensor produces a time series, but the readings are not independent &mdash; a refrigerant leak at one compressor manifests as correlated anomalies across sensors connected by the same piping circuit. Traditional time-series models (ARIMA, LSTM, even Transformers) treat each variable in isolation or model cross-variable dependencies implicitly through shared hidden states. They have no mechanism to encode the <em>physical topology</em> that governs how disturbances propagate.</p>
+
+<p>This is precisely the gap that <strong>Graph Neural Networks (GNNs)</strong> fill. By overlaying a graph structure on your multivariate time series &mdash; where nodes are sensors (or variables) and edges encode spatial, physical, or statistical relationships &mdash; GNNs can explicitly model how information propagates through a network over time.</p>
+
+<p>The results speak for themselves. Since the seminal DCRNN [1] and STGCN [2] papers in 2018, spatio-temporal GNNs (ST-GNNs) have dominated traffic forecasting benchmarks [3] and are rapidly expanding into energy systems [4], healthcare [5], environmental monitoring, and industrial fault detection. Yet the landscape is now dense with architectures, and the gap between reading a survey and actually building your first ST-GNN model can be daunting.</p>
+
+<p>This post is the guide I wish I had when I started my PhD. We'll build up from the mathematical foundations of graph signal processing, through the key spatial-temporal architectures, to a practical comparison of the frameworks you'll use to implement them. By the end, you'll have a clear mental model for <em>when</em> a GNN is the right tool, <em>which architecture</em> fits your problem, and <em>which framework</em> to reach for.</p>
+</section>
+
+<!-- ═══════════════════ 2. WHEN TO USE ═══════════════════ -->
+<section id="when">
+<h2>2. When Should You Reach for a GNN?</h2>
+
+<p>Not every time-series problem benefits from a GNN. The computational overhead and implementation complexity are only justified when the <strong>relational structure between variables carries information that improves prediction</strong>. Here is the decision framework I use:</p>
+
+<!-- Decision Flowchart SVG -->
+<figure class="blog-figure">
+<svg viewBox="0 0 720 520" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Decision flowchart for choosing between time-series modeling approaches">
+  <title>Decision Flowchart: When to Use GNNs for Time-Series</title>
+  <style>
+    .flow-box{fill:var(--card);stroke:var(--border);stroke-width:1.5;rx:12}
+    .flow-diamond{fill:var(--card);stroke:var(--brand);stroke-width:2}
+    .flow-result{fill:var(--badge-bg);stroke:var(--brand);stroke-width:1.5;rx:12}
+    .flow-text{fill:var(--text);font-family:system-ui,sans-serif;font-size:13px;text-anchor:middle;dominant-baseline:central}
+    .flow-label{fill:var(--muted);font-family:system-ui,sans-serif;font-size:11px;text-anchor:middle;dominant-baseline:central;font-weight:700}
+    .flow-arrow{stroke:var(--muted);stroke-width:1.5;fill:none;marker-end:url(#arrowhead)}
+    .flow-result-text{fill:var(--brand);font-family:system-ui,sans-serif;font-size:12px;text-anchor:middle;dominant-baseline:central;font-weight:700}
+  </style>
+  <defs>
+    <marker id="arrowhead" viewBox="0 0 10 7" refX="10" refY="3.5" markerWidth="8" markerHeight="6" orient="auto"><polygon points="0 0, 10 3.5, 0 7" fill="var(--muted)"/></marker>
+  </defs>
+
+  <!-- Q1: Multiple interacting variables? -->
+  <polygon class="flow-diamond" points="360,15 500,65 360,115 220,65"/>
+  <text class="flow-text" x="360" y="58" style="font-size:12px">Multiple interacting</text>
+  <text class="flow-text" x="360" y="74" style="font-size:12px">variables?</text>
+
+  <!-- No -> ARIMA / Univariate -->
+  <line class="flow-arrow" x1="220" y1="65" x2="90" y2="65"/>
+  <text class="flow-label" x="158" y="52">No</text>
+  <rect class="flow-result" x="10" y="40" width="80" height="50"/>
+  <text class="flow-result-text" x="50" y="58">ARIMA /</text>
+  <text class="flow-result-text" x="50" y="73">ETS</text>
+
+  <!-- Yes -> Q2 -->
+  <line class="flow-arrow" x1="360" y1="115" x2="360" y2="155"/>
+  <text class="flow-label" x="375" y="138">Yes</text>
+
+  <!-- Q2: Relational structure meaningful? -->
+  <polygon class="flow-diamond" points="360,155 510,210 360,265 210,210"/>
+  <text class="flow-text" x="360" y="202" style="font-size:12px">Relational structure</text>
+  <text class="flow-text" x="360" y="218" style="font-size:12px">between variables?</text>
+
+  <!-- No -> LSTM / Transformer -->
+  <line class="flow-arrow" x1="210" y1="210" x2="90" y2="210"/>
+  <text class="flow-label" x="155" y="197">No</text>
+  <rect class="flow-result" x="5" y="185" width="85" height="50"/>
+  <text class="flow-result-text" x="48" y="203">LSTM /</text>
+  <text class="flow-result-text" x="48" y="218">Transformer</text>
+
+  <!-- Yes -> Q3 -->
+  <line class="flow-arrow" x1="360" y1="265" x2="360" y2="305"/>
+  <text class="flow-label" x="375" y="288">Yes</text>
+
+  <!-- Q3: Graph structure known? -->
+  <polygon class="flow-diamond" points="360,305 500,355 360,405 220,355"/>
+  <text class="flow-text" x="360" y="348" style="font-size:12px">Graph structure</text>
+  <text class="flow-text" x="360" y="364" style="font-size:12px">known a priori?</text>
+
+  <!-- Yes -> GNN with known graph -->
+  <line class="flow-arrow" x1="500" y1="355" x2="610" y2="355"/>
+  <text class="flow-label" x="552" y="342">Yes</text>
+  <rect class="flow-result" x="610" y="328" width="100" height="55"/>
+  <text class="flow-result-text" x="660" y="347">GNN with</text>
+  <text class="flow-result-text" x="660" y="362">known graph</text>
+  <text style="fill:var(--muted);font-family:system-ui;font-size:10px;text-anchor:middle" x="660" y="378">STGCN, DCRNN</text>
+
+  <!-- No -> Q4 -->
+  <line class="flow-arrow" x1="360" y1="405" x2="360" y2="445"/>
+  <text class="flow-label" x="375" y="428">No</text>
+
+  <!-- Q4: Can learn structure? -->
+  <rect class="flow-result" x="280" y="445" width="160" height="60" style="stroke:var(--accent)"/>
+  <text class="flow-result-text" x="360" y="467" style="color:var(--accent)">GNN with</text>
+  <text class="flow-result-text" x="360" y="482">learned graph</text>
+  <text style="fill:var(--muted);font-family:system-ui;font-size:10px;text-anchor:middle" x="360" y="498">Graph WaveNet, MTGNN, GTS</text>
+
+  <!-- Side note: "< 5 variables?" -->
+  <line class="flow-arrow" x1="220" y1="355" x2="90" y2="355"/>
+  <text class="flow-label" x="160" y="342">Weak / few vars</text>
+  <rect class="flow-result" x="5" y="330" width="85" height="50"/>
+  <text class="flow-result-text" x="48" y="348">VAR /</text>
+  <text class="flow-result-text" x="48" y="363">Transformer</text>
+</svg>
+<figcaption class="blog-caption">Figure 1: Decision framework for selecting a time-series modeling approach. The key branching question is whether relational structure between variables is meaningful and exploitable.</figcaption>
+</figure>
+
+<div class="blog-callout">
+  <div class="blog-callout-title">Rule of Thumb</div>
+  <p style="margin:0">If removing the graph structure (replacing the adjacency matrix with an identity matrix) doesn't hurt performance, your problem probably doesn't need a GNN. Always run this ablation.</p>
+</div>
+
+<p>Concretely, GNNs tend to outperform when:</p>
+<ul>
+  <li><strong>The system has physically meaningful topology</strong> &mdash; road networks, power grids, brain connectivity, sensor networks with known spatial layout.</li>
+  <li><strong>Disturbances propagate through the network</strong> &mdash; a fault at one node causes delayed, attenuated effects at neighboring nodes (e.g., traffic congestion spreading along highways).</li>
+  <li><strong>The number of interacting nodes is moderate to large</strong> (tens to thousands). For 3&ndash;5 variables, a standard multivariate LSTM or Transformer is simpler and often sufficient.</li>
+  <li><strong>You need inductive transfer</strong> &mdash; training on one network topology and deploying on another (e.g., different cities' traffic networks).</li>
+</ul>
+</section>
+
+<!-- ═══════════════════ 3. MATH FOUNDATIONS ═══════════════════ -->
+<section id="math">
+<h2>3. Mathematical Foundations</h2>
+
+<p>Before diving into architectures, we need a shared mathematical language. This section builds from first principles &mdash; if you're comfortable with the graph Laplacian and Chebyshev filtering, feel free to skip to <a href="#temporal">Section 4</a>.</p>
+
+<h3 id="math-graphs">3.1 Graphs and Graph Signals</h3>
+
+<p>A <strong>graph</strong> \(\mathcal{G} = (\mathcal{V}, \mathcal{E}, \mathbf{A})\) consists of a set of \(N\) nodes \(\mathcal{V}\), edges \(\mathcal{E}\), and a weighted adjacency matrix \(\mathbf{A} \in \mathbb{R}^{N \times N}\) where \(A_{ij} > 0\) if there is an edge from node \(i\) to node \(j\).</p>
+
+<p>A <strong>graph signal</strong> is a function \(\mathbf{x}: \mathcal{V} \to \mathbb{R}\) that assigns a scalar value to each node. Stacking these values, we get a vector \(\mathbf{x} \in \mathbb{R}^N\). In our time-series context, each node is a sensor and \(x_i^{(t)}\) is the reading of sensor \(i\) at time \(t\). The full spatio-temporal signal is a matrix \(\mathbf{X} \in \mathbb{R}^{N \times T}\).</p>
+
+<!-- Graph Signal SVG Diagram -->
+<figure class="blog-figure">
+<svg viewBox="0 0 700 280" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Graph-structured time series concept diagram">
+  <title>Graph-Structured Time Series: Nodes with temporal signals on a network</title>
+  <style>
+    .node-circle{fill:var(--card);stroke:var(--brand);stroke-width:2.5}
+    .node-label{fill:var(--text);font-family:system-ui;font-size:14px;font-weight:700;text-anchor:middle;dominant-baseline:central}
+    .edge-line{stroke:var(--border);stroke-width:2;opacity:0.6}
+    .signal-path{fill:none;stroke-width:2;opacity:0.9}
+    .axis-line{stroke:var(--muted);stroke-width:0.8;opacity:0.5}
+    .section-label{fill:var(--muted);font-family:system-ui;font-size:12px;font-weight:600;text-anchor:middle}
+  </style>
+
+  <!-- Left: Traditional multivariate view -->
+  <text class="section-label" x="140" y="20">Traditional View</text>
+  <!-- Time axes -->
+  <line class="axis-line" x1="30" y1="60" x2="260" y2="60"/>
+  <line class="axis-line" x1="30" y1="120" x2="260" y2="120"/>
+  <line class="axis-line" x1="30" y1="180" x2="260" y2="180"/>
+  <line class="axis-line" x1="30" y1="240" x2="260" y2="240"/>
+
+  <!-- Signal 1 -->
+  <text style="fill:var(--brand);font-family:system-ui;font-size:12px;font-weight:600" x="12" y="63">v1</text>
+  <path class="signal-path" style="stroke:var(--brand)" d="M30,60 Q55,40 80,55 T130,48 T180,62 T230,50 T260,58"/>
+
+  <!-- Signal 2 -->
+  <text style="fill:var(--accent);font-family:system-ui;font-size:12px;font-weight:600" x="12" y="123">v2</text>
+  <path class="signal-path" style="stroke:var(--accent)" d="M30,120 Q55,105 80,118 T130,108 T180,122 T230,112 T260,120"/>
+
+  <!-- Signal 3 -->
+  <text style="fill:var(--brand);font-family:system-ui;font-size:12px;font-weight:600;opacity:0.7" x="12" y="183">v3</text>
+  <path class="signal-path" style="stroke:var(--brand);opacity:0.7" d="M30,180 Q55,170 80,185 T130,172 T180,178 T230,168 T260,182"/>
+
+  <!-- Signal 4 -->
+  <text style="fill:var(--accent);font-family:system-ui;font-size:12px;font-weight:600;opacity:0.7" x="12" y="243">v4</text>
+  <path class="signal-path" style="stroke:var(--accent);opacity:0.7" d="M30,240 Q55,225 80,235 T130,228 T180,242 T230,232 T260,238"/>
+
+  <text style="fill:var(--muted);font-family:system-ui;font-size:11px;text-anchor:middle" x="145" y="268">time &rarr;</text>
+
+  <!-- Arrow in middle -->
+  <text style="fill:var(--brand);font-family:system-ui;font-size:24px;text-anchor:middle;dominant-baseline:central;font-weight:700" x="340" y="140">&rArr;</text>
+  <text class="section-label" x="340" y="165">Discover</text>
+  <text class="section-label" x="340" y="180">Structure</text>
+
+  <!-- Right: Graph view -->
+  <text class="section-label" x="550" y="20">Graph View</text>
+
+  <!-- Edges -->
+  <line class="edge-line" x1="480" y1="90" x2="600" y2="80"/>
+  <line class="edge-line" x1="480" y1="90" x2="510" y2="200"/>
+  <line class="edge-line" x1="600" y1="80" x2="620" y2="190"/>
+  <line class="edge-line" x1="510" y1="200" x2="620" y2="190"/>
+  <line class="edge-line" x1="480" y1="90" x2="620" y2="190"/>
+
+  <!-- Nodes with mini signals -->
+  <!-- Node 1 -->
+  <circle class="node-circle" cx="480" cy="90" r="22"/>
+  <text class="node-label" x="480" y="91">v1</text>
+  <path class="signal-path" style="stroke:var(--brand)" d="M458,60 Q465,50 472,57 T486,52 T500,60" stroke-width="1.5"/>
+
+  <!-- Node 2 -->
+  <circle class="node-circle" cx="600" cy="80" r="22"/>
+  <text class="node-label" x="600" y="81">v2</text>
+  <path class="signal-path" style="stroke:var(--accent)" d="M578,50 Q585,42 592,48 T606,43 T620,50" stroke-width="1.5"/>
+
+  <!-- Node 3 -->
+  <circle class="node-circle" cx="510" cy="200" r="22"/>
+  <text class="node-label" x="510" y="201">v3</text>
+  <path class="signal-path" style="stroke:var(--brand);opacity:0.7" d="M488,170 Q495,162 502,168 T516,163 T530,170" stroke-width="1.5"/>
+
+  <!-- Node 4 -->
+  <circle class="node-circle" cx="620" cy="190" r="22"/>
+  <text class="node-label" x="620" y="191">v4</text>
+  <path class="signal-path" style="stroke:var(--accent);opacity:0.7" d="M598,160 Q605,152 612,158 T626,153 T640,160" stroke-width="1.5"/>
+
+  <!-- Edge weights -->
+  <text style="fill:var(--muted);font-family:system-ui;font-size:10px;text-anchor:middle" x="540" y="75">w12</text>
+  <text style="fill:var(--muted);font-family:system-ui;font-size:10px;text-anchor:middle" x="483" y="150">w13</text>
+  <text style="fill:var(--muted);font-family:system-ui;font-size:10px;text-anchor:middle" x="565" y="205">w34</text>
+</svg>
+<figcaption class="blog-caption">Figure 2: A multivariate time series reframed as temporal signals on a graph. Each node carries its own time series; edges encode the relationships between variables (spatial proximity, correlation, physical connectivity).</figcaption>
+</figure>
+
+<h3 id="math-laplacian">3.2 The Graph Laplacian</h3>
+
+<p>The <strong>degree matrix</strong> \(\mathbf{D}\) is a diagonal matrix with \(D_{ii} = \sum_j A_{ij}\). The <strong>combinatorial graph Laplacian</strong> is:</p>
+
+<div class="blog-equation">
+$$\mathbf{L} = \mathbf{D} - \mathbf{A}$$
+</div>
+
+<p>And its normalized variant, which is more numerically stable and most commonly used in GNN literature:</p>
+
+<div class="blog-equation">
+$$\mathbf{L}_{\text{norm}} = \mathbf{I}_N - \mathbf{D}^{-1/2}\mathbf{A}\mathbf{D}^{-1/2}$$
+</div>
+
+<p>The Laplacian is real symmetric positive semi-definite, so it admits an eigendecomposition:</p>
+
+<div class="blog-equation">
+$$\mathbf{L} = \mathbf{U}\boldsymbol{\Lambda}\mathbf{U}^\top$$
+</div>
+
+<p>where \(\mathbf{U} = [\mathbf{u}_0, \mathbf{u}_1, \ldots, \mathbf{u}_{N-1}]\) is the matrix of orthonormal eigenvectors and \(\boldsymbol{\Lambda} = \text{diag}(\lambda_0, \lambda_1, \ldots, \lambda_{N-1})\) contains the eigenvalues sorted as \(0 = \lambda_0 \leq \lambda_1 \leq \cdots \leq \lambda_{N-1}\). The eigenvectors form the <strong>graph Fourier basis</strong>, and the eigenvalues are the <strong>graph frequencies</strong>.</p>
+
+<div class="blog-callout">
+  <div class="blog-callout-title">Intuition</div>
+  <p style="margin:0">Just as classical Fourier analysis decomposes a temporal signal into oscillations of different frequencies, the graph Laplacian's eigenvectors decompose a graph signal into components of increasing "spatial frequency." The eigenvector for \(\lambda_0 = 0\) is the constant signal (DC component); higher eigenvalues correspond to signals that change rapidly between connected nodes.</p>
+</div>
+
+<h3 id="math-gft">3.3 Graph Fourier Transform</h3>
+
+<p>The <strong>Graph Fourier Transform (GFT)</strong> of a signal \(\mathbf{x}\) is the projection onto the eigenbasis:</p>
+
+<div class="blog-equation">
+$$\hat{\mathbf{x}} = \mathbf{U}^\top \mathbf{x} \quad \text{(forward)} \qquad \mathbf{x} = \mathbf{U}\hat{\mathbf{x}} \quad \text{(inverse)}$$
+</div>
+
+<p>where \(\hat{x}_k = \langle \mathbf{u}_k, \mathbf{x} \rangle\) is the coefficient corresponding to the \(k\)-th graph frequency. This is the direct analogue of the DFT, but defined over the irregular domain of the graph rather than a regular grid.</p>
+
+<h3 id="math-filter">3.4 Spectral Filtering and the ChebNet Trick</h3>
+
+<p>A <strong>spectral graph filter</strong> applies a transfer function \(g_\theta\) in the frequency domain:</p>
+
+<div class="blog-equation">
+$$\mathbf{y} = g_\theta(\mathbf{L})\,\mathbf{x} = \mathbf{U}\, g_\theta(\boldsymbol{\Lambda})\,\mathbf{U}^\top \mathbf{x}$$
+</div>
+
+<p>where \(g_\theta(\boldsymbol{\Lambda}) = \text{diag}(\theta_0, \theta_1, \ldots, \theta_{N-1})\) contains \(N\) learnable spectral coefficients. This is powerful but has two critical problems: (1) the eigendecomposition costs \(\mathcal{O}(N^3)\), and (2) the filter has \(N\) parameters &mdash; not localized in the vertex domain.</p>
+
+<p><strong>ChebNet</strong> [6] solves both problems by approximating the filter with a truncated Chebyshev polynomial expansion of order \(K\):</p>
+
+<div class="blog-equation">
+$$g_\theta(\mathbf{L})\,\mathbf{x} \approx \sum_{k=0}^{K} \theta_k\, T_k(\tilde{\mathbf{L}})\,\mathbf{x}$$
+</div>
+
+<p>where \(\tilde{\mathbf{L}} = \frac{2}{\lambda_{\max}}\mathbf{L} - \mathbf{I}_N\) scales the eigenvalues to \([-1, 1]\), and the Chebyshev polynomials satisfy the recurrence:</p>
+
+<div class="blog-equation">
+$$T_0(\mathbf{x}) = \mathbf{1}, \quad T_1(\mathbf{x}) = \mathbf{x}, \quad T_k(\mathbf{x}) = 2\mathbf{x}\,T_{k-1}(\mathbf{x}) - T_{k-2}(\mathbf{x})$$
+</div>
+
+<p>This is a breakthrough result. The filter now has only \(K+1\) parameters, is \(K\)-localized (aggregates only the \(K\)-hop neighborhood), and can be computed in \(\mathcal{O}(K|\mathcal{E}|)\) time &mdash; no eigendecomposition needed.</p>
+
+<h3 id="math-gcn">3.5 From Spectral Filters to GCN</h3>
+
+<p>Kipf and Welling [7] made the further simplification of setting \(K = 1\) and \(\lambda_{\max} = 2\), collapsing the Chebyshev filter to a single-parameter first-order approximation. With a renormalization trick (adding self-loops), the <strong>GCN layer</strong> becomes:</p>
+
+<div class="blog-equation">
+$$\mathbf{H}^{(\ell+1)} = \sigma\!\left(\tilde{\mathbf{D}}^{-1/2}\tilde{\mathbf{A}}\tilde{\mathbf{D}}^{-1/2}\,\mathbf{H}^{(\ell)}\,\mathbf{W}^{(\ell)}\right)$$
+</div>
+
+<p>where \(\tilde{\mathbf{A}} = \mathbf{A} + \mathbf{I}_N\) (adjacency with self-loops), \(\tilde{\mathbf{D}}\) is its degree matrix, \(\mathbf{H}^{(\ell)} \in \mathbb{R}^{N \times F_\ell}\) is the feature matrix at layer \(\ell\), \(\mathbf{W}^{(\ell)} \in \mathbb{R}^{F_\ell \times F_{\ell+1}}\) are learnable weights, and \(\sigma\) is a nonlinearity (typically ReLU).</p>
+
+<p>This equation is the workhorse of most spatial-temporal GNNs. It performs, in a single operation: neighborhood aggregation, linear transformation, and nonlinear activation. The key insight is that it is <strong>equivalent to one step of a first-order spectral filter</strong> &mdash; the mathematical pedigree of graph signal processing lives inside every GCN layer.</p>
+</section>
+
+<!-- ═══════════════════ 4. TEMPORAL DIMENSION ═══════════════════ -->
+<section id="temporal">
+<h2>4. Adding the Temporal Dimension</h2>
+
+<p>A GCN layer handles spatial dependencies at a <em>single time step</em>. To model time-series, we need to couple spatial graph convolutions with temporal dynamics. This section covers the two key ideas: spatial-temporal message passing, and the three main strategies for temporal modeling.</p>
+
+<h3 id="temporal-mp">4.1 Spatial-Temporal Message Passing</h3>
+
+<p>The general <strong>message passing</strong> framework [8] at each layer computes, for every node \(v\):</p>
+
+<div class="blog-equation">
+$$\mathbf{m}_v = \text{AGG}\!\left(\left\{\,M\!\left(\mathbf{h}_v, \mathbf{h}_u, \mathbf{e}_{vu}\right) : u \in \mathcal{N}(v)\right\}\right), \qquad \mathbf{h}_v' = U\!\left(\mathbf{h}_v, \mathbf{m}_v\right)$$
+</div>
+
+<p>where \(M\) is the message function, AGG is a permutation-invariant aggregation (sum, mean, or max), \(U\) is the update function, and \(\mathcal{N}(v)\) is the neighborhood of node \(v\).</p>
+
+<p>In the <strong>spatial-temporal</strong> extension, each node carries a hidden state that evolves over time. At each time step \(t\), we perform graph-level spatial aggregation, then update the temporal state. The interplay between these two dimensions is what makes ST-GNN architectures powerful &mdash; and is where the key architectural choices diverge.</p>
+
+<!-- Message Passing SVG -->
+<figure class="blog-figure">
+<svg viewBox="0 0 680 260" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Spatial-temporal message passing diagram">
+  <title>Spatial-Temporal Message Passing across time steps</title>
+  <style>
+    .mp-node{fill:var(--card);stroke:var(--brand);stroke-width:2}
+    .mp-node-center{fill:var(--badge-bg);stroke:var(--brand);stroke-width:2.5}
+    .mp-edge{stroke:var(--border);stroke-width:1.5;opacity:0.6}
+    .mp-temporal{stroke:var(--accent);stroke-width:2;stroke-dasharray:6,4;opacity:0.8}
+    .mp-text{fill:var(--text);font-family:system-ui;font-size:12px;text-anchor:middle;dominant-baseline:central}
+    .mp-time{fill:var(--muted);font-family:system-ui;font-size:14px;text-anchor:middle;font-weight:700}
+    .mp-arrow{stroke:var(--brand);stroke-width:2;fill:none;marker-end:url(#arrowG)}
+    .mp-spatial-label{fill:var(--brand);font-family:system-ui;font-size:10px;text-anchor:middle;font-weight:600}
+    .mp-temporal-label{fill:var(--accent);font-family:system-ui;font-size:10px;text-anchor:middle;font-weight:600}
+  </style>
+  <defs>
+    <marker id="arrowG" viewBox="0 0 10 7" refX="10" refY="3.5" markerWidth="7" markerHeight="5" orient="auto"><polygon points="0 0, 10 3.5, 0 7" fill="var(--brand)"/></marker>
+    <marker id="arrowP" viewBox="0 0 10 7" refX="10" refY="3.5" markerWidth="7" markerHeight="5" orient="auto"><polygon points="0 0, 10 3.5, 0 7" fill="var(--accent)"/></marker>
+  </defs>
+
+  <!-- Time step t-1 -->
+  <text class="mp-time" x="120" y="20">t - 1</text>
+  <line class="mp-edge" x1="80" y1="80" x2="160" y2="80"/>
+  <line class="mp-edge" x1="80" y1="80" x2="120" y2="160"/>
+  <line class="mp-edge" x1="160" y1="80" x2="120" y2="160"/>
+  <circle class="mp-node" cx="80" cy="80" r="18"/>
+  <text class="mp-text" x="80" y="80">u1</text>
+  <circle class="mp-node" cx="160" cy="80" r="18"/>
+  <text class="mp-text" x="160" y="80">u2</text>
+  <circle class="mp-node-center" cx="120" cy="160" r="18"/>
+  <text class="mp-text" x="120" y="160" style="font-weight:700">v</text>
+
+  <!-- Spatial arrows at t-1 -->
+  <path class="mp-arrow" d="M88,95 Q100,125 110,143" style="opacity:0.5"/>
+  <path class="mp-arrow" d="M152,95 Q140,125 130,143" style="opacity:0.5"/>
+
+  <!-- Time step t -->
+  <text class="mp-time" x="340" y="20">t</text>
+  <line class="mp-edge" x1="300" y1="80" x2="380" y2="80"/>
+  <line class="mp-edge" x1="300" y1="80" x2="340" y2="160"/>
+  <line class="mp-edge" x1="380" y1="80" x2="340" y2="160"/>
+  <circle class="mp-node" cx="300" cy="80" r="18"/>
+  <text class="mp-text" x="300" y="80">u1</text>
+  <circle class="mp-node" cx="380" cy="80" r="18"/>
+  <text class="mp-text" x="380" y="80">u2</text>
+  <circle class="mp-node-center" cx="340" cy="160" r="18"/>
+  <text class="mp-text" x="340" y="160" style="font-weight:700">v</text>
+
+  <!-- Spatial arrows at t -->
+  <path class="mp-arrow" d="M308,95 Q320,125 330,143"/>
+  <path class="mp-arrow" d="M372,95 Q360,125 350,143"/>
+  <text class="mp-spatial-label" x="340" y="115">Spatial AGG</text>
+
+  <!-- Time step t+1 -->
+  <text class="mp-time" x="560" y="20">t + 1</text>
+  <line class="mp-edge" x1="520" y1="80" x2="600" y2="80"/>
+  <line class="mp-edge" x1="520" y1="80" x2="560" y2="160"/>
+  <line class="mp-edge" x1="600" y1="80" x2="560" y2="160"/>
+  <circle class="mp-node" cx="520" cy="80" r="18"/>
+  <text class="mp-text" x="520" y="80">u1</text>
+  <circle class="mp-node" cx="600" cy="80" r="18"/>
+  <text class="mp-text" x="600" y="80">u2</text>
+  <circle class="mp-node-center" cx="560" cy="160" r="18"/>
+  <text class="mp-text" x="560" y="160" style="font-weight:700">v</text>
+
+  <!-- Temporal arrows (dashed) -->
+  <line class="mp-temporal" x1="140" y1="160" x2="318" y2="160" marker-end="url(#arrowP)"/>
+  <line class="mp-temporal" x1="360" y1="160" x2="538" y2="160" marker-end="url(#arrowP)"/>
+  <text class="mp-temporal-label" x="230" y="150">Temporal Update</text>
+  <text class="mp-temporal-label" x="450" y="150">Temporal Update</text>
+
+  <!-- Legend -->
+  <line style="stroke:var(--brand);stroke-width:2" x1="180" y1="235" x2="210" y2="235"/>
+  <text style="fill:var(--muted);font-family:system-ui;font-size:11px;dominant-baseline:central" x="215" y="235">Spatial message passing</text>
+  <line style="stroke:var(--accent);stroke-width:2;stroke-dasharray:6,4" x1="380" y1="235" x2="410" y2="235"/>
+  <text style="fill:var(--muted);font-family:system-ui;font-size:11px;dominant-baseline:central" x="415" y="235">Temporal state evolution</text>
+</svg>
+<figcaption class="blog-caption">Figure 3: Spatial-temporal message passing. At each time step, node v aggregates messages from its spatial neighbors (solid arrows). Between time steps, its hidden state evolves via a temporal update (dashed arrows). The interplay of these two operations is the core of all ST-GNN architectures.</figcaption>
+</figure>
+
+<h3 id="temporal-strategies">4.2 Temporal Modeling Strategies</h3>
+
+<p>There are three main strategies for modeling the temporal dimension within an ST-GNN. The choice between them has significant implications for training speed, long-range dependency capture, and expressiveness:</p>
+
+<table class="blog-table">
+  <thead>
+    <tr>
+      <th>Strategy</th>
+      <th>Mechanism</th>
+      <th>Representative Models</th>
+      <th>Strengths</th>
+      <th>Weaknesses</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><strong>RNN-based</strong></td>
+      <td>GRU/LSTM cells with graph conv replacing linear transforms</td>
+      <td>DCRNN [1], T-GCN [9], A3T-GCN [10]</td>
+      <td>Natural sequential processing; good for variable-length input</td>
+      <td>Sequential &rarr; slow training; vanishing gradients</td>
+    </tr>
+    <tr>
+      <td><strong>CNN-based</strong></td>
+      <td>1D causal/dilated convolutions along the time axis</td>
+      <td>STGCN [2], Graph WaveNet [3], MTGNN [11]</td>
+      <td>Fully parallelizable; multi-scale temporal patterns; fast training</td>
+      <td>Fixed receptive field; requires padding for causality</td>
+    </tr>
+    <tr>
+      <td><strong>Attention-based</strong></td>
+      <td>Temporal self-attention mechanisms</td>
+      <td>ASTGCN [12], GMAN [13]</td>
+      <td>Adaptive weighting; captures arbitrary-range dependencies</td>
+      <td>Quadratic complexity in sequence length; memory intensive</td>
+    </tr>
+  </tbody>
+</table>
+
+<p>A fourth, less common strategy is <strong>joint spectral-temporal processing</strong>, as used in StemGNN [14], which applies both Graph Fourier Transform and Discrete Fourier Transform in a unified spectral domain. We'll cover this in <a href="#arch-stemgnn">Section 5.5</a>.</p>
+</section>
+
+<!-- ═══════════════════ 5. ARCHITECTURES ═══════════════════ -->
+<section id="architectures">
+<h2>5. Landmark Architectures</h2>
+
+<p>This section covers the five architectures that, in my view, represent the critical evolutionary steps in the field. Understanding their design choices will equip you to navigate the broader literature.</p>
+
+<!-- Architecture Taxonomy SVG -->
+<figure class="blog-figure">
+<svg viewBox="0 0 720 310" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Architecture taxonomy of spatial-temporal GNNs">
+  <title>ST-GNN Architecture Taxonomy</title>
+  <style>
+    .tax-box{fill:var(--card);stroke:var(--border);stroke-width:1.5;rx:14}
+    .tax-header{fill:var(--badge-bg);stroke:var(--brand);stroke-width:1.5;rx:14 14 0 0}
+    .tax-title{fill:var(--brand);font-family:system-ui;font-size:14px;font-weight:700;text-anchor:middle;dominant-baseline:central}
+    .tax-item{fill:var(--text);font-family:system-ui;font-size:12px;text-anchor:middle;dominant-baseline:central}
+    .tax-sub{fill:var(--muted);font-family:system-ui;font-size:11px;text-anchor:middle;dominant-baseline:central}
+    .tax-block{fill:var(--badge-bg);stroke:var(--border);stroke-width:1;rx:6}
+  </style>
+
+  <!-- RNN-based column -->
+  <rect class="tax-box" x="20" y="10" width="210" height="290"/>
+  <rect class="tax-header" x="20" y="10" width="210" height="40"/>
+  <text class="tax-title" x="125" y="32">RNN-based</text>
+
+  <rect class="tax-block" x="40" y="65" width="170" height="32"/>
+  <text class="tax-item" x="125" y="77">Graph Conv</text>
+  <text class="tax-sub" x="125" y="92" style="font-size:9px">replaces linear in GRU/LSTM</text>
+
+  <text style="fill:var(--brand);font-family:system-ui;font-size:18px;text-anchor:middle" x="125" y="115">&darr;</text>
+
+  <rect class="tax-block" x="40" y="125" width="170" height="32"/>
+  <text class="tax-item" x="125" y="137">GRU / LSTM Cell</text>
+  <text class="tax-sub" x="125" y="152" style="font-size:9px">sequential temporal update</text>
+
+  <text class="tax-sub" x="125" y="185">DCRNN (2018)</text>
+  <text class="tax-sub" x="125" y="200">T-GCN (2020)</text>
+  <text class="tax-sub" x="125" y="215">A3T-GCN (2021)</text>
+  <text class="tax-sub" x="125" y="230">EvolveGCN (2020)</text>
+
+  <!-- CNN-based column -->
+  <rect class="tax-box" x="255" y="10" width="210" height="290"/>
+  <rect class="tax-header" x="255" y="10" width="210" height="40" style="stroke:var(--accent)"/>
+  <text class="tax-title" x="360" y="32" style="fill:var(--accent)">CNN-based</text>
+
+  <rect class="tax-block" x="275" y="65" width="170" height="32"/>
+  <text class="tax-item" x="360" y="77">Graph Conv</text>
+  <text class="tax-sub" x="360" y="92" style="font-size:9px">spectral or spatial</text>
+
+  <text style="fill:var(--accent);font-family:system-ui;font-size:18px;text-anchor:middle" x="360" y="115">&darr;</text>
+
+  <rect class="tax-block" x="275" y="125" width="170" height="32"/>
+  <text class="tax-item" x="360" y="137">Dilated Causal Conv</text>
+  <text class="tax-sub" x="360" y="152" style="font-size:9px">parallel temporal modeling</text>
+
+  <text class="tax-sub" x="360" y="185">STGCN (2018)</text>
+  <text class="tax-sub" x="360" y="200">Graph WaveNet (2019)</text>
+  <text class="tax-sub" x="360" y="215">MTGNN (2020)</text>
+  <text class="tax-sub" x="360" y="230">StemGNN (2020)</text>
+
+  <!-- Attention-based column -->
+  <rect class="tax-box" x="490" y="10" width="210" height="290"/>
+  <rect class="tax-header" x="490" y="10" width="210" height="40"/>
+  <text class="tax-title" x="595" y="32">Attention-based</text>
+
+  <rect class="tax-block" x="510" y="65" width="170" height="32"/>
+  <text class="tax-item" x="595" y="77">Spatial Attention</text>
+  <text class="tax-sub" x="595" y="92" style="font-size:9px">dynamic neighbor weighting</text>
+
+  <text style="fill:var(--brand);font-family:system-ui;font-size:18px;text-anchor:middle" x="595" y="115">&darr;</text>
+
+  <rect class="tax-block" x="510" y="125" width="170" height="32"/>
+  <text class="tax-item" x="595" y="137">Temporal Attention</text>
+  <text class="tax-sub" x="595" y="152" style="font-size:9px">adaptive time weighting</text>
+
+  <text class="tax-sub" x="595" y="185">ASTGCN (2019)</text>
+  <text class="tax-sub" x="595" y="200">GMAN (2020)</text>
+  <text class="tax-sub" x="595" y="215">PDFormer (2023)</text>
+</svg>
+<figcaption class="blog-caption">Figure 4: Taxonomy of spatial-temporal GNN architectures. The three main families differ in how they model the temporal dimension: recurrent cells (left), causal/dilated convolutions (center), or attention mechanisms (right).</figcaption>
+</figure>
+
+<h3 id="arch-stgcn">5.1 STGCN &mdash; Spatio-Temporal Graph Convolutional Network</h3>
+
+<p><strong>Paper:</strong> Yu et al., "Spatio-Temporal Graph Convolutional Networks: A Deep Learning Framework for Traffic Flow Forecasting," IJCAI 2018 [2].</p>
+
+<p>STGCN was the first to formulate traffic forecasting as a <em>pure convolutional</em> problem on graphs &mdash; no recurrent cells at all. Its core building block is the <strong>ST-Conv block</strong>, a sandwich of temporal convolution, graph convolution, and temporal convolution:</p>
+
+<div class="blog-equation">
+$$\text{ST-Conv}(\mathbf{X}) = \Gamma_1 *_\mathcal{T} \left(\Theta *_\mathcal{G} \left(\Gamma_0 *_\mathcal{T} \mathbf{X}\right)\right)$$
+</div>
+
+<p>where \(*_\mathcal{T}\) denotes temporal (1D gated causal) convolution, and \(*_\mathcal{G}\) denotes graph convolution using Chebyshev spectral filters (order \(K = 3\)). Multiple ST-Conv blocks are stacked with residual connections.</p>
+
+<div class="blog-callout">
+  <div class="blog-callout-title">Why it matters</div>
+  <p style="margin:0">By replacing RNNs with temporal convolutions, STGCN achieved <strong>10-15x faster training</strong> than RNN-based baselines while matching or exceeding accuracy. It proved that the temporal dimension of traffic data could be efficiently modeled without sequential computation.</p>
+</div>
+
+<h3 id="arch-dcrnn">5.2 DCRNN &mdash; Diffusion Convolutional Recurrent Neural Network</h3>
+
+<p><strong>Paper:</strong> Li et al., "Diffusion Convolutional Recurrent Neural Network: Data-Driven Traffic Forecasting," ICLR 2018 [1].</p>
+
+<p>DCRNN models spatial dependency as a <strong>diffusion process</strong> on a directed graph, capturing bidirectional information flow. The diffusion convolution replaces the standard linear transform inside GRU cells:</p>
+
+<div class="blog-equation">
+$$\mathbf{H}^{(\ell)} = \sum_{k=0}^{K} \left(\theta_{k,1}\,(\mathbf{D}_O^{-1}\mathbf{W})^k + \theta_{k,2}\,(\mathbf{D}_I^{-1}\mathbf{W}^\top)^k\right) \mathbf{H}^{(\ell-1)}$$
+</div>
+
+<p>where \(\mathbf{D}_O\) and \(\mathbf{D}_I\) are the out-degree and in-degree matrices, and \((\mathbf{D}_O^{-1}\mathbf{W})^k\) represents \(k\) steps of a random walk from each node. The bidirectional formulation (forward and backward diffusion) captures asymmetric spatial dependencies &mdash; critical for directed road networks where upstream congestion propagates differently than downstream effects.</p>
+
+<p>An encoder-decoder architecture with <strong>scheduled sampling</strong> is used for multi-step prediction, where the decoder gradually shifts from using ground-truth inputs to its own predictions during training.</p>
+
+<h3 id="arch-gwnet">5.3 Graph WaveNet</h3>
+
+<p><strong>Paper:</strong> Wu et al., "Graph WaveNet for Deep Spatial-Temporal Graph Modeling," IJCAI 2019 [3].</p>
+
+<p>Graph WaveNet introduced a breakthrough: the <strong>self-adaptive adjacency matrix</strong>. Instead of relying solely on a pre-defined graph, it learns the graph structure directly from data:</p>
+
+<div class="blog-equation">
+$$\tilde{\mathbf{A}}_{\text{adaptive}} = \text{SoftMax}\!\left(\text{ReLU}\!\left(\mathbf{E}_1 \mathbf{E}_2^\top\right)\right)$$
+</div>
+
+<p>where \(\mathbf{E}_1, \mathbf{E}_2 \in \mathbb{R}^{N \times d}\) are learnable node embedding matrices. This is multiplied element-wise or concatenated with the pre-defined adjacency, allowing the model to discover hidden spatial dependencies that aren't captured by physical proximity alone.</p>
+
+<p>The temporal module uses <strong>dilated causal convolutions</strong> (from WaveNet [15]), stacked with exponentially increasing dilation factors \(\{1, 2, 4, \ldots\}\) to cover a large receptive field while maintaining a manageable number of parameters.</p>
+
+<div class="blog-callout">
+  <div class="blog-callout-title">Key insight</div>
+  <p style="margin:0">Graph WaveNet was the first major work to show that <em>learned graph structure can outperform pre-defined adjacency matrices</em>. This opened the door to applying GNNs even when no explicit graph is available &mdash; the network discovers the structure end-to-end.</p>
+</div>
+
+<h3 id="arch-mtgnn">5.4 MTGNN &mdash; Connecting the Dots</h3>
+
+<p><strong>Paper:</strong> Wu et al., "Connecting the Dots: Multivariate Time Series Forecasting with Graph Neural Networks," KDD 2020 [11].</p>
+
+<p>MTGNN generalized Graph WaveNet's graph learning idea to a fully general <strong>multivariate time-series forecasting</strong> framework. Its graph learning module computes a sparse, directed graph using a top-\(k\) sampling strategy:</p>
+
+<div class="blog-equation">
+$$\mathbf{A} = \text{ReLU}\!\left(\tanh\!\left(\alpha\,\mathbf{E}_1 \boldsymbol{\Theta}_1 - \alpha\,\mathbf{E}_2 \boldsymbol{\Theta}_2\right)\right)$$
+</div>
+
+<p>where \(\alpha\) is a saturation parameter that controls the sparsity of the learned graph. The key innovation is that this graph is <strong>uni-directed</strong> &mdash; \(A_{ij} \neq A_{ji}\) in general &mdash; capturing asymmetric causal relationships between time series.</p>
+
+<p>MTGNN also introduced <strong>mix-hop graph propagation</strong>, concatenating information from different neighborhood depths rather than averaging them, and a <strong>curriculum learning</strong> strategy that gradually increases the prediction horizon during training.</p>
+
+<h3 id="arch-stemgnn">5.5 StemGNN &mdash; Spectral Temporal Graph Neural Network</h3>
+
+<p><strong>Paper:</strong> Cao et al., "Spectral Temporal Graph Neural Network for Multivariate Time-series Forecasting," NeurIPS 2020 [14].</p>
+
+<p>StemGNN takes a fundamentally different approach by capturing both inter-series correlations and temporal dependencies <strong>jointly in the spectral domain</strong>. Its core operation applies the GFT for spatial correlations and the DFT for temporal patterns:</p>
+
+<div class="blog-equation">
+$$\hat{\mathbf{X}}^{(k)}_\text{spectral} = \text{DFT}\!\left(\text{GFT}\!\left(\mathbf{X}^{(k)}\right)\right) = \text{DFT}\!\left(\mathbf{U}^\top \mathbf{X}^{(k)}\right)$$
+</div>
+
+<p>After spectral processing (1D convolution and GLU gating in the spectral domain), the signal is reconstructed via inverse DFT and inverse GFT. The graph structure is learned jointly during training.</p>
+
+<p>The spectral approach is particularly elegant for time series with strong periodic patterns, as the DFT naturally represents these as sharp peaks in the frequency domain.</p>
+</section>
+
+<!-- ═══════════════════ 6. FRAMEWORKS ═══════════════════ -->
+<section id="frameworks">
+<h2>6. Choosing Your Framework</h2>
+
+<p>With the theory in place, the practical question becomes: <em>which software library should you use?</em> The table below compares the four main options as of early 2026.</p>
+
+<table class="blog-table">
+  <thead>
+    <tr>
+      <th>Feature</th>
+      <th>PyG Temporal</th>
+      <th>DGL</th>
+      <th>Spektral</th>
+      <th>StellarGraph</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><strong>Backend</strong></td>
+      <td>PyTorch</td>
+      <td>PyTorch / TF / MXNet</td>
+      <td>TensorFlow / Keras</td>
+      <td>TensorFlow / Keras</td>
+    </tr>
+    <tr>
+      <td><strong>Temporal models built-in</strong></td>
+      <td>15+ (STGCN, DCRNN, A3T-GCN, ...)</td>
+      <td>None (manual implementation)</td>
+      <td>None (manual implementation)</td>
+      <td>GCN-LSTM only</td>
+    </tr>
+    <tr>
+      <td><strong>Temporal data loaders</strong></td>
+      <td>Yes (3 iterator types)</td>
+      <td>No</td>
+      <td>No</td>
+      <td>Limited</td>
+    </tr>
+    <tr>
+      <td><strong>Scalability</strong></td>
+      <td>Good (PGT-I: 11.78x speedup)</td>
+      <td>Excellent (billions of edges)</td>
+      <td>Moderate</td>
+      <td>Moderate</td>
+    </tr>
+    <tr>
+      <td><strong>Active maintenance</strong></td>
+      <td>Yes</td>
+      <td>Yes (AWS-backed)</td>
+      <td>Moderate</td>
+      <td>No (discontinued)</td>
+    </tr>
+    <tr>
+      <td><strong>Learning curve</strong></td>
+      <td>Low</td>
+      <td>Moderate</td>
+      <td>Low (Keras-like)</td>
+      <td>Low</td>
+    </tr>
+    <tr>
+      <td><strong>Production readiness</strong></td>
+      <td>Moderate</td>
+      <td>High (SageMaker)</td>
+      <td>High (via TF Serving)</td>
+      <td>Low</td>
+    </tr>
+  </tbody>
+</table>
+
+<h3>My Recommendation</h3>
+
+<p><strong>For research and prototyping:</strong> Use <a href="https://pytorch-geometric-temporal.readthedocs.io/" target="_blank">PyTorch Geometric Temporal (PyGT)</a> [16]. It's the only library with first-class support for spatial-temporal GNNs. It provides pre-implemented models (STGCN, DCRNN, A3T-GCN, GConvGRU, GConvLSTM, EvolveGCN, and more), three types of temporal data iterators (<code>StaticGraphTemporalSignal</code>, <code>DynamicGraphTemporalSignal</code>, <code>DynamicGraphStaticSignal</code>), and built-in dataset loaders. The 2025 PGT-I extension [17] added index-batching for up to 89% memory reduction and 11.78x multi-GPU speedup.</p>
+
+<p><strong>For large-scale production:</strong> Use <a href="https://www.dgl.ai/" target="_blank">DGL</a> [18] if you need to scale to graphs with hundreds of millions of edges, or if you require framework flexibility (PyTorch/TensorFlow/MXNet). You'll need to implement temporal components yourself, but the graph convolution infrastructure is battle-tested and optimized. DGL's integration with Amazon SageMaker makes it well-suited for production deployments.</p>
+
+<p><strong>For TensorFlow-native teams:</strong> <a href="https://graphneural.network/" target="_blank">Spektral</a> [19] follows the Keras philosophy and integrates cleanly with the TF ecosystem. However, you'll need to build temporal layers yourself by wrapping GNN layers in <code>tf.keras.layers.LSTM</code> or similar.</p>
+
+<p><strong>Avoid for new projects:</strong> StellarGraph is effectively unmaintained (no releases or activity for over 12 months). Migrate existing projects to PyGT or DGL.</p>
+
+<p>Here is a minimal working example using PyTorch Geometric Temporal to train an A3T-GCN model:</p>
+
+<div class="blog-code"><span class="keyword">import</span> torch
+<span class="keyword">from</span> torch_geometric_temporal.nn.recurrent <span class="keyword">import</span> A3TGCN
+<span class="keyword">from</span> torch_geometric_temporal.dataset <span class="keyword">import</span> METRLADatasetLoader
+
+<span class="comment"># Load METR-LA traffic dataset</span>
+loader = METRLADatasetLoader()
+dataset = loader.get_dataset(num_timesteps_in=<span class="string">12</span>, num_timesteps_out=<span class="string">3</span>)
+train_dataset, test_dataset = temporal_signal_split(dataset, ratio=<span class="string">0.8</span>)
+
+<span class="comment"># Define model</span>
+<span class="keyword">class</span> TemporalGNN(torch.nn.Module):
+    <span class="keyword">def</span> __init__(self, node_features, periods):
+        <span class="keyword">super</span>().__init__()
+        self.tgnn = A3TGCN(in_channels=node_features, out_channels=<span class="string">32</span>, periods=periods)
+        self.linear = torch.nn.Linear(<span class="string">32</span>, periods)
+
+    <span class="keyword">def</span> forward(self, x, edge_index):
+        h = self.tgnn(x, edge_index)   <span class="comment"># (N, 32)</span>
+        y = self.linear(h)              <span class="comment"># (N, periods)</span>
+        <span class="keyword">return</span> y
+
+model = TemporalGNN(node_features=<span class="string">2</span>, periods=<span class="string">3</span>)
+optimizer = torch.optim.Adam(model.parameters(), lr=<span class="string">0.01</span>)
+
+<span class="comment"># Training loop</span>
+<span class="keyword">for</span> epoch <span class="keyword">in</span> range(<span class="string">50</span>):
+    model.train()
+    <span class="keyword">for</span> snapshot <span class="keyword">in</span> train_dataset:
+        y_hat = model(snapshot.x, snapshot.edge_index)
+        loss = torch.nn.functional.mse_loss(y_hat, snapshot.y)
+        loss.backward()
+        optimizer.step()
+        optimizer.zero_grad()</div>
+
+</section>
+
+<!-- ═══════════════════ 7. DATASETS ═══════════════════ -->
+<section id="datasets">
+<h2>7. Benchmark Datasets</h2>
+
+<p>The standard benchmarks for evaluating ST-GNNs come primarily from the transportation domain. Here are the datasets you'll encounter most frequently:</p>
+
+<table class="blog-table">
+  <thead>
+    <tr>
+      <th>Dataset</th>
+      <th>Nodes</th>
+      <th>Time Steps</th>
+      <th>Granularity</th>
+      <th>Metric</th>
+      <th>Commonly Used By</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><strong>METR-LA</strong></td>
+      <td>207</td>
+      <td>34,272</td>
+      <td>5 min</td>
+      <td>Speed (mph)</td>
+      <td>DCRNN, Graph WaveNet, MTGNN</td>
+    </tr>
+    <tr>
+      <td><strong>PEMS-BAY</strong></td>
+      <td>325</td>
+      <td>52,116</td>
+      <td>5 min</td>
+      <td>Speed</td>
+      <td>DCRNN, Graph WaveNet, MTGNN</td>
+    </tr>
+    <tr>
+      <td><strong>PeMSD4</strong></td>
+      <td>307</td>
+      <td>16,992</td>
+      <td>5 min</td>
+      <td>Flow (volume)</td>
+      <td>ASTGCN, STGCN</td>
+    </tr>
+    <tr>
+      <td><strong>PeMSD8</strong></td>
+      <td>170</td>
+      <td>17,856</td>
+      <td>5 min</td>
+      <td>Flow (volume)</td>
+      <td>ASTGCN, STGCN</td>
+    </tr>
+    <tr>
+      <td><strong>Solar-Energy</strong></td>
+      <td>137</td>
+      <td>52,560</td>
+      <td>10 min</td>
+      <td>Power output</td>
+      <td>MTGNN, StemGNN</td>
+    </tr>
+    <tr>
+      <td><strong>Electricity</strong></td>
+      <td>321</td>
+      <td>26,304</td>
+      <td>1 hour</td>
+      <td>Consumption (kWh)</td>
+      <td>MTGNN, StemGNN</td>
+    </tr>
+    <tr>
+      <td><strong>LargeST</strong></td>
+      <td>Up to 8,600</td>
+      <td>Variable</td>
+      <td>5 min</td>
+      <td>Speed/Flow</td>
+      <td>NeurIPS 2023 benchmark [20]</td>
+    </tr>
+  </tbody>
+</table>
+
+<p><strong>Standard evaluation protocol:</strong> 70% train / 10% validation / 20% test (chronological split, no shuffling). Predictions are evaluated at 15-minute (3-step), 30-minute (6-step), and 60-minute (12-step) horizons. Metrics: MAE, RMSE, and MAPE. Input window: typically 12 time steps (1 hour).</p>
+
+<div class="blog-callout">
+  <div class="blog-callout-title">Beyond traffic</div>
+  <p style="margin:0">While traffic datasets dominate the benchmarks, the most exciting applications of ST-GNNs lie elsewhere: energy grid fault detection [4], clinical EEG analysis [5], environmental sensor networks, supply chain optimization, and industrial process monitoring. If your domain has a natural graph structure and temporal data, these architectures transfer well.</p>
+</div>
+</section>
+
+<!-- ═══════════════════ 8. PRACTICAL ═══════════════════ -->
+<section id="practical">
+<h2>8. Practical Recommendations</h2>
+
+<p>Having worked extensively with ST-GNNs for industrial leak detection in CO&#x2082;-based refrigeration systems, here are the lessons I wish someone had told me upfront:</p>
+
+<ol>
+  <li><strong>Start with a strong non-GNN baseline.</strong> Train an LSTM or Temporal Fusion Transformer on the same data. If the GNN doesn't meaningfully outperform it, the graph structure may not be informative. This ablation is essential.</li>
+
+  <li><strong>The graph matters more than the architecture.</strong> I've seen mediocre architectures with a well-constructed adjacency matrix outperform sophisticated models with a poor graph. Invest time in graph construction: physical distance, correlation-based thresholding, or domain-specific topology.</li>
+
+  <li><strong>Start with a known graph, then try learning it.</strong> If you have a physical topology (sensor layout, road network, circuit diagram), use it first. Only add adaptive/learned adjacency (Graph WaveNet / MTGNN style) if ablation shows the pre-defined graph is insufficient.</li>
+
+  <li><strong>Normalize carefully.</strong> Sensors in a network can have wildly different scales and distributions. Per-node standardization (z-score across time for each node independently) is almost always necessary. Failing to do this is the #1 source of poor ST-GNN performance I've seen.</li>
+
+  <li><strong>Mind the receptive field.</strong> For CNN-based temporal modules, calculate your effective temporal receptive field: with dilation factors \(\{1, 2, 4, 8\}\) and kernel size 2, the receptive field is \(\sum_{i=0}^{3}(2-1)\cdot 2^i + 1 = 16\) time steps. Ensure this covers the temporal dependencies in your data.</li>
+
+  <li><strong>Watch for over-smoothing.</strong> Stacking too many GCN layers causes all node representations to converge (the "over-smoothing" problem [21]). For most ST-GNN tasks, 2&ndash;3 graph convolution layers with 2&ndash;3 hop neighborhoods is sufficient.</li>
+
+  <li><strong>Use curriculum learning for long horizons.</strong> If predicting 12+ steps ahead, train on shorter horizons first and gradually extend. This is MTGNN's strategy and it significantly stabilizes training.</li>
+</ol>
+</section>
+
+<!-- ═══════════════════ REFERENCES ═══════════════════ -->
+<section id="references">
+<h2>References</h2>
+
+<ol class="blog-ref-list">
+  <li id="ref1">Li, Y., Yu, R., Shahabi, C., and Liu, Y. "Diffusion Convolutional Recurrent Neural Network: Data-Driven Traffic Forecasting." <em>ICLR</em>, 2018. <a href="https://arxiv.org/abs/1707.01926" target="_blank">arXiv:1707.01926</a></li>
+
+  <li id="ref2">Yu, B., Yin, H., and Zhu, Z. "Spatio-Temporal Graph Convolutional Networks: A Deep Learning Framework for Traffic Flow Forecasting." <em>IJCAI</em>, pp. 3634&ndash;3640, 2018. <a href="https://arxiv.org/abs/1709.04875" target="_blank">arXiv:1709.04875</a></li>
+
+  <li id="ref3">Wu, Z., Pan, S., Long, G., Jiang, J., and Zhang, C. "Graph WaveNet for Deep Spatial-Temporal Graph Modeling." <em>IJCAI</em>, pp. 1907&ndash;1913, 2019. <a href="https://arxiv.org/abs/1906.00121" target="_blank">arXiv:1906.00121</a></li>
+
+  <li id="ref4">Wijethunga, R., Yousaf, M., Bhowmick, S., and Arechavala-Gomeza, N. "Precision Leak Detection in Supermarket Refrigeration Systems Integrating Categorical Gradient Boosting." <em>Energies</em>, 17(3), 736, 2024. <a href="https://doi.org/10.3390/en17030736" target="_blank">DOI:10.3390/en17030736</a></li>
+
+  <li id="ref5">Tang, X., et al. "EEG-based Emotion Recognition via Graph Neural Network." <em>IEEE TAFFC</em>, 2023.</li>
+
+  <li id="ref6">Defferrard, M., Bresson, X., and Vandergheynst, P. "Convolutional Neural Networks on Graphs with Fast Localized Spectral Filtering." <em>NeurIPS</em>, pp. 3844&ndash;3852, 2016. <a href="https://arxiv.org/abs/1606.09375" target="_blank">arXiv:1606.09375</a></li>
+
+  <li id="ref7">Kipf, T.N. and Welling, M. "Semi-Supervised Classification with Graph Convolutional Networks." <em>ICLR</em>, 2017. <a href="https://arxiv.org/abs/1609.02907" target="_blank">arXiv:1609.02907</a></li>
+
+  <li id="ref8">Gilmer, J., Schoenholz, S.S., Riley, P.F., Vinyals, O., and Dahl, G.E. "Neural Message Passing for Quantum Chemistry." <em>ICML</em>, pp. 1263&ndash;1272, 2017. <a href="https://arxiv.org/abs/1704.01212" target="_blank">arXiv:1704.01212</a></li>
+
+  <li id="ref9">Zhao, L., et al. "T-GCN: A Temporal Graph Convolutional Network for Traffic Prediction." <em>IEEE TITS</em>, 21(9), pp. 3848&ndash;3858, 2020. <a href="https://arxiv.org/abs/1811.05320" target="_blank">arXiv:1811.05320</a></li>
+
+  <li id="ref10">Bai, J., et al. "A3T-GCN: Attention Temporal Graph Convolutional Network for Traffic Forecasting." <em>ISPRS Int. J. Geo-Inf.</em>, 10(7), 485, 2021. <a href="https://arxiv.org/abs/2006.11583" target="_blank">arXiv:2006.11583</a></li>
+
+  <li id="ref11">Wu, Z., Pan, S., Long, G., Jiang, J., Chang, X., and Zhang, C. "Connecting the Dots: Multivariate Time Series Forecasting with Graph Neural Networks." <em>KDD</em>, pp. 753&ndash;763, 2020. <a href="https://arxiv.org/abs/2005.11650" target="_blank">arXiv:2005.11650</a></li>
+
+  <li id="ref12">Guo, S., Lin, Y., Feng, N., Song, C., and Wan, H. "Attention Based Spatial-Temporal Graph Convolutional Networks for Traffic Flow Forecasting." <em>AAAI</em>, 33(01), pp. 922&ndash;929, 2019. <a href="https://doi.org/10.1609/aaai.v33i01.3301922" target="_blank">DOI:10.1609/aaai.v33i01.3301922</a></li>
+
+  <li id="ref13">Zheng, C., Fan, X., Wang, C., and Qi, J. "GMAN: A Graph Multi-Attention Network for Traffic Prediction." <em>AAAI</em>, 34(01), pp. 1234&ndash;1241, 2020. <a href="https://arxiv.org/abs/1911.08415" target="_blank">arXiv:1911.08415</a></li>
+
+  <li id="ref14">Cao, D., Wang, Y., Duan, J., et al. "Spectral Temporal Graph Neural Network for Multivariate Time-Series Forecasting." <em>NeurIPS</em>, 33, pp. 17766&ndash;17778, 2020. <a href="https://arxiv.org/abs/2103.07719" target="_blank">arXiv:2103.07719</a></li>
+
+  <li id="ref15">van den Oord, A., et al. "WaveNet: A Generative Model for Raw Audio." <em>arXiv preprint</em>, 2016. <a href="https://arxiv.org/abs/1609.03499" target="_blank">arXiv:1609.03499</a></li>
+
+  <li id="ref16">Rozemberczki, B., et al. "PyTorch Geometric Temporal: Spatiotemporal Signal Processing with Neural Machine Learning Models." <em>CIKM</em>, 2021. <a href="https://arxiv.org/abs/2104.07788" target="_blank">arXiv:2104.07788</a></li>
+
+  <li id="ref17">Rozemberczki, B., et al. "PyTorch Geometric Temporal Iterative (PGT-I): Scalable Distributed Training for Spatio-Temporal GNNs." 2025.</li>
+
+  <li id="ref18">Wang, M., Zheng, D., Ye, Z., et al. "Deep Graph Library: A Graph-Centric, Highly-Performant Package for Graph Neural Networks." <a href="https://arxiv.org/abs/1909.01315" target="_blank">arXiv:1909.01315</a></li>
+
+  <li id="ref19">Grattarola, D. and Alippi, C. "Graph Neural Networks in TensorFlow and Keras with Spektral." <em>ICML 2020 Workshop on GRL</em>. <a href="https://arxiv.org/abs/2006.12138" target="_blank">arXiv:2006.12138</a></li>
+
+  <li id="ref20">Liu, X., et al. "LargeST: A Benchmark Dataset for Large-Scale Traffic Forecasting." <em>NeurIPS Datasets and Benchmarks</em>, 2023.</li>
+
+  <li id="ref21">Li, Q., Han, Z., and Wu, X.M. "Deeper Insights into Graph Convolutional Networks for Semi-Supervised Learning." <em>AAAI</em>, 2018. <a href="https://arxiv.org/abs/1801.07606" target="_blank">arXiv:1801.07606</a></li>
+
+  <li id="ref22">Shang, C., Chen, J., and Bi, J. "Discrete Graph Structure Learning for Forecasting Multiple Time Series." <em>ICLR</em>, 2021. <a href="https://arxiv.org/abs/2101.06861" target="_blank">arXiv:2101.06861</a></li>
+
+  <li id="ref23">Kim, M., et al. "Graph Neural Networks for Time Series Analysis." <em>IEEE TPAMI</em>, 2024. <a href="https://github.com/KimMeen/Awesome-GNN4TS" target="_blank">Awesome-GNN4TS</a></li>
+</ol>
+</section>
+
+<hr style="border:none;border-top:1px solid var(--border);margin:48px 0 24px">
+
+<p style="color:var(--muted);font-size:14px;text-align:center"><em>If you found this post useful, feel free to reach out at <a href="mailto:rwijethu@uwo.ca">rwijethu@uwo.ca</a> or connect on <a href="https://www.linkedin.com/in/rashinda" target="_blank">LinkedIn</a>. I'm always happy to discuss GNNs, time-series, and explainability.</em></p>
+
+</article>
+</div>
+
+<div class="container">
+  <div class="footer">
+    <div>&copy; <span id="y"></span> Rashinda Wijethunga &bull; <a href="mailto:rwijethu@uwo.ca">rwijethu@uwo.ca</a> &bull; <a href="https://www.linkedin.com/in/rashinda" rel="me">LinkedIn</a></div>
+    <script>document.getElementById('y').textContent=new Date().getFullYear()</script>
+    <div><small class="muted">Built with &#9829; and GitHub Pages</small></div>
+  </div>
+</div>
+
+<script>
+// Initialize theme from localStorage or OS preference
+const initTheme = () => {
+  const saved = localStorage.getItem('theme');
+  const preferLight = saved ? saved === 'light' : window.matchMedia('(prefers-color-scheme: light)').matches;
+  if (preferLight) {
+    document.documentElement.classList.add('light-theme');
+    updateThemeIcon(true);
+  }
+};
+
+const toggleTheme = () => {
+  const isLight = document.documentElement.classList.toggle('light-theme');
+  localStorage.setItem('theme', isLight ? 'light' : 'dark');
+  updateThemeIcon(isLight);
+};
+
+const updateThemeIcon = (isLight) => {
+  const sunIcon = document.querySelector('.sun-icon');
+  const moonIcon = document.querySelector('.moon-icon');
+  if (sunIcon && moonIcon) {
+    sunIcon.style.display = isLight ? 'none' : 'block';
+    moonIcon.style.display = isLight ? 'block' : 'none';
+  }
+};
+
+initTheme();
+</script>
+
+</body>
+</html>
