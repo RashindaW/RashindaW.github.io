@@ -5,8 +5,19 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Blogs — Rashinda Wijethunga</title>
 <link rel="stylesheet" href="/assets/css/styles.css">
+<meta name="description" content="Blog posts by Rashinda Wijethunga on machine learning, research practices, and lessons learned.">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Blogs — Rashinda Wijethunga">
+<meta property="og:description" content="Blog posts by Rashinda Wijethunga on machine learning, research practices, and lessons learned.">
+<meta property="og:image" content="https://rashindaw.github.io/assets/img/profile.jpg">
+<meta property="og:url" content="https://rashindaw.github.io/blogs.html">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Blogs — Rashinda Wijethunga">
+<meta name="twitter:description" content="Blog posts by Rashinda Wijethunga on machine learning, research practices, and lessons learned.">
+<meta name="twitter:image" content="https://rashindaw.github.io/assets/img/profile.jpg">
 </head>
 <body>
+<a href="#main-content" class="skip-link">Skip to content</a>
 
 <div class="container">
   <div class="nav">
@@ -17,6 +28,7 @@
     <div style="display:flex;gap:8px;align-items:center">
       <a href="/about.html">About</a>
       <a href="/projects.html">Projects</a>
+      <a href="/publications.html">Publications</a>
       <a href="/blogs.html">Blogs</a>
       <a href="/assets/cv/Rashinda.pdf" class="btn">Download CV</a>
       <button class="theme-toggle" onclick="toggleTheme()" aria-label="Toggle theme">
@@ -31,11 +43,25 @@
   </div>
 </div>
 
-<div class="container">
+<div class="container" id="main-content">
   <h2 class="h2">Blogs & Thoughts</h2>
-  <div class="card" style="text-align:center;padding:60px 40px">
-    <div class="h3">Coming Soon</div>
-    <p class="p">Upcoming blogs will be added here. Stay tuned for insights on machine learning, research practices, and lessons learned along the way.</p>
+  <div class="grid g2">
+    <div class="card">
+      <div class="badge" style="margin-bottom:12px">Research</div>
+      <div class="h3">Why Graph Neural Networks for Time-Series?</div>
+      <p class="p">Exploring how relational inductive biases in GNNs unlock spatial dependencies that traditional time-series models miss — lessons from my CO₂ leak detection project.</p>
+      <small class="muted">Draft — Coming Soon</small>
+    </div>
+    <div class="card">
+      <div class="badge" style="margin-bottom:12px">PhD Life</div>
+      <div class="h3">Lessons from Three Years of PhD Research</div>
+      <p class="p">What I wish I knew before starting a PhD — on managing research pivots, balancing breadth vs. depth, and maintaining momentum through the messy middle.</p>
+      <small class="muted">Draft — Coming Soon</small>
+    </div>
+    <div class="blog-card-new">
+      <div class="h3" style="color:var(--muted)">+ New Post</div>
+      <p class="p">Your next blog post goes here. Duplicate a card above and start writing.</p>
+    </div>
   </div>
 </div>
 
@@ -48,10 +74,11 @@
 </div>
 
 <script>
-// Initialize theme from localStorage or default to dark
+// Initialize theme from localStorage or OS preference
 const initTheme = () => {
-  const savedTheme = localStorage.getItem('theme') || 'dark';
-  if (savedTheme === 'light') {
+  const saved = localStorage.getItem('theme');
+  const preferLight = saved ? saved === 'light' : window.matchMedia('(prefers-color-scheme: light)').matches;
+  if (preferLight) {
     document.documentElement.classList.add('light-theme');
     updateThemeIcon(true);
   }

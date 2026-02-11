@@ -5,8 +5,19 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Books — Rashinda Wijethunga</title>
 <link rel="stylesheet" href="/assets/css/styles.css">
+<meta name="description" content="Book notes and summaries by Rashinda Wijethunga — Antifragile, Deep Work, and more.">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Books — Rashinda Wijethunga">
+<meta property="og:description" content="Book notes and summaries by Rashinda Wijethunga — Antifragile, Deep Work, and more.">
+<meta property="og:image" content="https://rashindaw.github.io/assets/img/profile.jpg">
+<meta property="og:url" content="https://rashindaw.github.io/books.html">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Books — Rashinda Wijethunga">
+<meta name="twitter:description" content="Book notes and summaries by Rashinda Wijethunga — Antifragile, Deep Work, and more.">
+<meta name="twitter:image" content="https://rashindaw.github.io/assets/img/profile.jpg">
 </head>
 <body>
+<a href="#main-content" class="skip-link">Skip to content</a>
 
 <div class="container">
   <div class="nav">
@@ -17,8 +28,8 @@
     <div style="display:flex;gap:8px;align-items:center">
       <a href="/about.html">About</a>
       <a href="/projects.html">Projects</a>
-      <a href="/books.html">Books</a>
-      <a href="/philosophy.html">Philosophy</a>
+      <a href="/publications.html">Publications</a>
+      <a href="/blogs.html">Blogs</a>
       <a href="/assets/cv/Rashinda.pdf" class="btn">Download CV</a>
       <button class="theme-toggle" onclick="toggleTheme()" aria-label="Toggle theme">
         <svg class="sun-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -32,7 +43,7 @@
   </div>
 </div>
 
-<div class="container">
+<div class="container" id="main-content">
   <h2 class="h2">Book Notes</h2>
   <div class="grid">
     <div class="card" id="antifragile">
@@ -65,10 +76,11 @@
 </div>
 
 <script>
-// Initialize theme from localStorage or default to dark
+// Initialize theme from localStorage or OS preference
 const initTheme = () => {
-  const savedTheme = localStorage.getItem('theme') || 'dark';
-  if (savedTheme === 'light') {
+  const saved = localStorage.getItem('theme');
+  const preferLight = saved ? saved === 'light' : window.matchMedia('(prefers-color-scheme: light)').matches;
+  if (preferLight) {
     document.documentElement.classList.add('light-theme');
     updateThemeIcon(true);
   }
