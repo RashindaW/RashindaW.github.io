@@ -809,6 +809,223 @@ function ULMAProject() {
 }
 
 // ══════════════════════════════════════════════
+// ─── DUAL-GRAPH SHM ───
+// ══════════════════════════════════════════════
+
+function DualGraphSHMArchImage() {
+  const [zoomed, setZoomed] = useState(false);
+  useEffect(() => {
+    if (!zoomed) return;
+    const h = (e) => { if (e.key === "Escape") setZoomed(false); };
+    window.addEventListener("keydown", h);
+    return () => window.removeEventListener("keydown", h);
+  }, [zoomed]);
+  return (
+    <div>
+      <div className={`arch-img-wrapper${zoomed ? " zoomed" : ""}`}
+        onClick={() => setZoomed(!zoomed)} role="button" tabIndex={0}
+        aria-label={zoomed ? "Click to close" : "Click to zoom"}
+        onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") setZoomed(!zoomed); }}>
+        <img src="/assets/img/dualgraph-shm-architecture.jpg" alt="Dual-Graph SHM architecture: vibration data acquisition, 1D-CNN feature extraction, dual adjacency matrices (static A_s and feature A_F), adaptive fusion, horizontal and vertical graph convolution, squeeze-and-excitation, and final classification"
+          style={{ width: "100%", display: "block", padding: zoomed ? 0 : 16 }} />
+      </div>
+      <p style={{ color: MUTED, fontSize: 12, marginTop: 10, textAlign: "center" }}>Click to zoom &middot; Press Escape to close</p>
+    </div>
+  );
+}
+
+function DualGraphSHMResults() {
+  const [ds, setDs] = useState("lumo");
+  const lumoData = [
+    { method: "SuperGraph", acc: 70.78, type: "b" }, { method: "GCN", acc: 88.46, type: "b" },
+    { method: "2D-CNN", acc: 92.23, type: "b" }, { method: "ANN", acc: 93.12, type: "b" },
+    { method: "CWT-DCNN", acc: 93.45, type: "b" }, { method: "1D-CNN", acc: 97.09, type: "b" },
+    { method: "DGCN", acc: 98.95, type: "b" }, { method: "Proposed", acc: 99.84, type: "ours" },
+  ];
+  const qugsData = [
+    { method: "SuperGraph", acc: 87.75, type: "b" }, { method: "2D-CNN", acc: 91.29, type: "b" },
+    { method: "GCN", acc: 92.49, type: "b" }, { method: "ANN", acc: 95.82, type: "b" },
+    { method: "CWT-DCNN", acc: 96.69, type: "b" }, { method: "1D-CNN", acc: 99.17, type: "b" },
+    { method: "DGCN", acc: 99.74, type: "b" }, { method: "Proposed", acc: 99.88, type: "ours" },
+  ];
+  const data = ds === "lumo" ? lumoData : qugsData;
+  const Tip = ({ active, payload }) => {
+    if (!active || !payload?.length) return null;
+    const d = payload[0].payload;
+    return <div style={{ background: "#1a1d26", border: `1px solid ${BORDER}`, borderRadius: 6, padding: "10px 14px", fontSize: 12 }}><div style={{ color: "#fff", fontWeight: 700, marginBottom: 4 }}>{d.method}</div><div style={{ color: TEXT }}>Accuracy: {d.acc}%</div></div>;
+  };
+  return (
+    <div>
+      <div style={{ display: "flex", gap: 8, marginBottom: 24 }}>
+        {[{ k: "lumo", l: "LUMO", s: "Steel Mast \u00B7 18 sensors" }, { k: "qugs", l: "QUGS", s: "Grandstand \u00B7 30 sensors" }].map(d => (
+          <button key={d.k} onClick={() => setDs(d.k)} style={{
+            background: ds === d.k ? RED + "20" : CARD, border: `1px solid ${ds === d.k ? RED : BORDER}`,
+            borderRadius: 8, padding: "10px 20px", color: ds === d.k ? RED : TEXT, fontSize: 13, fontWeight: 600, transition: "all 0.2s",
+          }}>{d.l} <span style={{ color: MUTED, fontSize: 11, display: "block" }}>{d.s}</span></button>
+        ))}
+      </div>
+      <div style={{ display: "flex", gap: 20, flexWrap: "wrap" }}>
+        <div style={{ flex: "1 1 400px", minWidth: 300, background: CARD, border: `1px solid ${BORDER}`, borderRadius: 10, padding: "20px 12px 12px" }}>
+          <div style={{ color: MUTED, fontSize: 11, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 12, paddingLeft: 12 }}>Accuracy Comparison (%)</div>
+          <ResponsiveContainer width="100%" height={300}>
+            <BarChart data={data} layout="vertical" margin={{ left: 8, right: 20 }}>
+              <XAxis type="number" domain={[60, 100]} tick={{ fill: MUTED, fontSize: 10 }} axisLine={{ stroke: BORDER }} tickLine={false} />
+              <YAxis type="category" dataKey="method" tick={{ fill: TEXT, fontSize: 11, fontFamily: "'JetBrains Mono', monospace" }} axisLine={false} tickLine={false} width={90} />
+              <Tooltip content={<Tip />} cursor={{ fill: "#ffffff08" }} />
+              <Bar dataKey="acc" radius={[0, 4, 4, 0]} barSize={20}>
+                {data.map((e, i) => <Cell key={i} fill={e.type === "ours" ? GREEN : BLUE} fillOpacity={e.type === "ours" ? 1 : 0.55} />)}
+              </Bar>
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+        <div style={{ flex: "0 1 220px", display: "flex", flexDirection: "column", gap: 12 }}>
+          <div style={{ background: CARD, border: `1px solid ${BORDER}`, borderRadius: 10, padding: 20, textAlign: "center" }}>
+            <div style={{ color: MUTED, fontSize: 10, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 8 }}>Test Accuracy</div>
+            <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 34, fontWeight: 800, color: GREEN }}>{ds === "lumo" ? "99.84%" : "99.88%"}</div>
+          </div>
+          <div style={{ background: CARD, border: `1px solid ${BORDER}`, borderRadius: 10, padding: 20, textAlign: "center" }}>
+            <div style={{ color: MUTED, fontSize: 10, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 8 }}>Noise Robustness (0 dB)</div>
+            <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 28, fontWeight: 700, color: BLUE }}>{ds === "lumo" ? ">96.5%" : ">97%"}</div>
+          </div>
+          <div style={{ background: CARD, border: `1px solid ${BORDER}`, borderRadius: 10, padding: 20, textAlign: "center" }}>
+            <div style={{ color: MUTED, fontSize: 10, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 8 }}>Training Speedup</div>
+            <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 28, fontWeight: 700, color: GOLD }}>{ds === "lumo" ? "24\u00D7" : "11.5\u00D7"}</div>
+            <div style={{ fontSize: 10, color: MUTED, marginTop: 4 }}>{ds === "lumo" ? "295.7h \u2192 12.1h" : "1712.8h \u2192 148.2h"}</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function DualGraphSHMProject() {
+  return (
+    <div>
+      <section style={{ paddingTop: 64, paddingBottom: 48 }}>
+        <FadeIn>
+          <div style={{ display: "flex", gap: 8, marginBottom: 20, flexWrap: "wrap" }}>
+            <Tag color={BLUE}>Structural Health Monitoring</Tag>
+            <Tag color={RED}>Graph Neural Networks</Tag>
+            <Tag color={GREEN}>Damage Detection</Tag>
+          </div>
+          <h1 style={{ fontFamily: "'Playfair Display', Georgia, serif", fontSize: "clamp(32px, 5vw, 52px)", fontWeight: 900, color: "#fff", lineHeight: 1.1, margin: "0 0 12px" }}>Dual-Graph Neural Networks</h1>
+          <p style={{ fontSize: "clamp(16px, 2.2vw, 20px)", color: TEXT, lineHeight: 1.55, maxWidth: 680, margin: "0 0 6px" }}>
+            Robust and efficient structural damage detection and localization using complementary spatial-topology and feature-correlation graphs with 1D-CNN compression.
+          </p>
+          <p style={{ color: MUTED, fontSize: 14, margin: "0 0 12px" }}>Rashinda Wijethunga, Jagath Samarabandu, Ayan Sadhu &mdash; Western University</p>
+          <p style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 12, color: MUTED, margin: "0 0 32px" }}>Engineering Structures 343 (2025) 121265</p>
+          <a href="https://doi.org/10.1016/j.engstruct.2025.121265" target="_blank" rel="noopener" style={{ display: "inline-flex", alignItems: "center", gap: 8, padding: "12px 28px", borderRadius: 8, fontSize: 14, fontWeight: 600, background: GREEN, color: "#0A0E17", textDecoration: "none" }}>Read Paper</a>
+        </FadeIn>
+        <div style={{ display: "flex", gap: 14, flexWrap: "wrap", marginTop: 40 }}>
+          <StatCard value="99.84%" label="LUMO Accuracy" color={RED} delay={0.1} />
+          <StatCard value="99.88%" label="QUGS Accuracy" color={BLUE} delay={0.2} />
+          <StatCard value=">96.5%" label="At 0 dB SNR" color={GREEN} delay={0.3} />
+          <StatCard value="24\u00D7" label="Training Speedup" color={GOLD} delay={0.4} />
+        </div>
+      </section>
+
+      <Divider />
+
+      <section style={{ paddingBottom: 56 }}>
+        <FadeIn><SectionTitle tag="Challenge" tagColor={RED} title="Why single-graph methods fall short" subtitle="Existing GCN approaches for SHM have fundamental limitations that reduce effectiveness on complex structures." /></FadeIn>
+        <CardGrid>
+          <FadeIn delay={0.1}><InfoCard icon={"\uD83D\uDCE1"} title="Signal Attenuation Ambiguity" desc="A sensor far from a large defect can produce readings resembling those near a small defect. Single-graph GCNs cannot disambiguate these cases." /></FadeIn>
+          <FadeIn delay={0.2}><InfoCard icon={"\uD83D\uDD17"} title="Missing Feature Correlations" desc="Fixed topology graphs miss dynamic feature-based relationships. Sensors with similar damage signatures may not be physical neighbors." /></FadeIn>
+          <FadeIn delay={0.3}><InfoCard icon={"\u23F1"} title="Computational Cost" desc="High-dimensional raw vibration data (262K+ samples/signal) makes training prohibitively expensive without effective compression." /></FadeIn>
+        </CardGrid>
+      </section>
+
+      <Divider />
+
+      <section style={{ paddingBottom: 56 }}>
+        <FadeIn><SectionTitle tag="Method" tagColor={GREEN} title="Dual-graph with adaptive fusion" subtitle="Two complementary adjacency matrices fused via a learned gate, with 1D-CNN compression for efficiency." /></FadeIn>
+        <FadeIn delay={0.1}>
+          <CardGrid minWidth={220}>
+            {[
+              { icon: "\uD83C\uDF21\uFE0F", title: "1D-CNN Denoiser", desc: "Task-specific temporal filters suppress noise and compress T\u2192F dimensions, cutting training time up to 24\u00D7.", color: RED },
+              { icon: "\uD83D\uDCCD", title: "Static Graph A_s", desc: "Fixed adjacency from physical sensor layout. Captures spatial proximity and structural connectivity.", color: BLUE },
+              { icon: "\uD83E\uDDE0", title: "Feature Graph A_F", desc: "Dynamic adjacency from cosine similarity of CNN embeddings. Top-k sparsification enforces efficiency.", color: GREEN },
+              { icon: "\u2696\uFE0F", title: "Adaptive Gate \u03B1", desc: "Learned blend \u03B1\u00B7A_s + (1\u2212\u03B1)\u00B7A_F with Frobenius-penalty refinement produces A_fused.", color: GOLD },
+              { icon: "\u2194\uFE0F", title: "Horizontal GC", desc: "GCN over full feature vector using A_fused. Captures global cross-sensor spatial-feature patterns.", color: BLUE },
+              { icon: "\u2195\uFE0F", title: "Vertical GC + Gates", desc: "Per-segment GCN with forget gates tracks temporal evolution of inter-sensor relationships.", color: PURPLE },
+            ].map(c => (
+              <div key={c.title} style={{ background: CARD, border: `1px solid ${BORDER}`, borderRadius: 10, padding: 20 }}>
+                <div style={{ fontSize: 22, marginBottom: 8 }}>{c.icon}</div>
+                <div style={{ color: c.color, fontWeight: 700, fontSize: 14, marginBottom: 6 }}>{c.title}</div>
+                <div style={{ color: TEXT, fontSize: 13, lineHeight: 1.6 }}>{c.desc}</div>
+              </div>
+            ))}
+          </CardGrid>
+        </FadeIn>
+      </section>
+
+      <Divider />
+
+      <section style={{ paddingBottom: 56 }}>
+        <FadeIn><SectionTitle tag="Architecture" tagColor={BLUE} title="Pipeline overview" subtitle="From vibration data acquisition to damage classification. Click the diagram to zoom." /></FadeIn>
+        <FadeIn delay={0.1}><DualGraphSHMArchImage /></FadeIn>
+      </section>
+
+      <Divider />
+
+      <section style={{ paddingBottom: 56 }}>
+        <FadeIn><SectionTitle tag="Results" tagColor={RED} title="State-of-the-art on two benchmarks" subtitle="Evaluated on LUMO (steel mast, 18 sensors, 7 classes) and QUGS (grandstand, 30 sensors, 31 classes) against 7 baselines." /></FadeIn>
+        <FadeIn delay={0.1}><DualGraphSHMResults /></FadeIn>
+      </section>
+
+      <Divider />
+
+      <section style={{ paddingBottom: 56 }}>
+        <FadeIn><SectionTitle tag="Analysis" tagColor={GOLD} title="Ablation & robustness" subtitle="Both graph branches are essential. The dual-graph design improves accuracy by up to 28% over single-branch variants." /></FadeIn>
+        <FadeIn delay={0.1}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(270px, 1fr))", gap: 14 }}>
+            {[
+              { label: "LUMO", data: [{ config: "Full Dual-Graph", acc: 99.84, delta: 0 }, { config: "Horizontal GC only", acc: 97.23, delta: -2.61 }, { config: "Vertical GC only", acc: 98.42, delta: -1.42 }] },
+              { label: "QUGS", data: [{ config: "Full Dual-Graph", acc: 99.88, delta: 0 }, { config: "Horizontal GC only", acc: 71.47, delta: -28.41 }, { config: "Vertical GC only", acc: 99.23, delta: -0.65 }] },
+            ].map(({ label, data }) => (
+              <div key={label} style={{ background: CARD, border: `1px solid ${BORDER}`, borderRadius: 10, padding: 18 }}>
+                <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 12, fontWeight: 700, color: MUTED, marginBottom: 10, letterSpacing: "0.06em" }}>{label} ABLATION</div>
+                {data.map(d => (
+                  <div key={d.config} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "9px 12px", marginBottom: 5, borderRadius: 6, background: d.delta === 0 ? GREEN + "10" : CARD, border: `1px solid ${d.delta === 0 ? GREEN + "30" : BORDER}` }}>
+                    <span style={{ fontSize: 13, fontWeight: 600, color: d.delta === 0 ? GREEN : TEXT }}>{d.config}</span>
+                    <div style={{ textAlign: "right" }}>
+                      <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 14, fontWeight: 700, color: d.delta === 0 ? GREEN : "#fff" }}>{d.acc}%</span>
+                      {d.delta !== 0 && <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 11, color: RED, display: "block" }}>{d.delta}%</span>}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ))}
+          </div>
+        </FadeIn>
+        <FadeIn delay={0.2}>
+          <div style={{ marginTop: 18, background: CARD, border: `1px solid ${BORDER}`, borderRadius: 10, padding: 20 }}>
+            <div style={{ color: "#fff", fontWeight: 700, fontSize: 15, marginBottom: 10 }}>Key Findings</div>
+            <CardGrid minWidth={240}>
+              {[
+                { icon: "\uD83D\uDEE1\uFE0F", title: "Noise Resilience", text: ">96.5% at 0 dB SNR on LUMO, >97% on QUGS. Surpasses all baselines under severe noise conditions." },
+                { icon: "\uD83D\uDCCA", title: "Data Efficiency", text: "Outperforms all models once training data exceeds 30%. Maintains >95% accuracy across all ratios on LUMO." },
+                { icon: "\u26A1", title: "Compression", text: "On QUGS, T=2000\u2192200 cuts training from 1,713h to 148h while keeping 98%+ accuracy." },
+              ].map(c => (
+                <div key={c.title} style={{ padding: "8px 0" }}>
+                  <div style={{ fontSize: 18, marginBottom: 5 }}>{c.icon}</div>
+                  <div style={{ color: "#fff", fontWeight: 700, fontSize: 13, marginBottom: 4 }}>{c.title}</div>
+                  <div style={{ color: TEXT, fontSize: 12, lineHeight: 1.6 }}>{c.text}</div>
+                </div>
+              ))}
+            </CardGrid>
+          </div>
+        </FadeIn>
+      </section>
+
+      <div style={{ borderTop: `1px solid ${BORDER}`, padding: "24px 0", textAlign: "center", color: MUTED, fontSize: 12 }}>
+        Engineering Structures 343 (2025) 121265 &mdash; <a href="https://doi.org/10.1016/j.engstruct.2025.121265" target="_blank" rel="noopener" style={{ color: CYAN }}>DOI</a>
+      </div>
+    </div>
+  );
+}
+
+// ══════════════════════════════════════════════
 // ─── MITACS LEAK DETECTION ───
 // ══════════════════════════════════════════════
 
@@ -1119,17 +1336,19 @@ function ErgomateProject() {
 // ══════════════════════════════════════════════
 
 const PROJECTS = [
-  { id: "ulma",      label: "ULMA",         color: CYAN,   tagline: "Multi-Agent IT Automation" },
-  { id: "dualstgf",  label: "DualSTGF",     color: GOLD,   tagline: "Fault Detection GNN" },
-  { id: "mitacs",    label: "Mitacs Leak",   color: GREEN,  tagline: "CO\u2082 Refrigeration" },
-  { id: "necfe",     label: "NE-CFE",       color: PURPLE, tagline: "Counterfactual XAI" },
-  { id: "indoornav", label: "Indoor Nav",   color: CYAN,   tagline: "Visually Impaired" },
-  { id: "ergomate",  label: "Ergomate",     color: AMBER,  tagline: "IoT Office System" },
+  { id: "ulma",        label: "ULMA",           color: CYAN,   tagline: "Multi-Agent IT Automation" },
+  { id: "dualstgf",    label: "DualSTGF",       color: GOLD,   tagline: "Fault Detection GNN" },
+  { id: "dualgraphshm", label: "DualGraph SHM", color: "#F87171", tagline: "Structural Damage" },
+  { id: "mitacs",      label: "Mitacs Leak",     color: GREEN,  tagline: "CO\u2082 Refrigeration" },
+  { id: "necfe",       label: "NE-CFE",         color: PURPLE, tagline: "Counterfactual XAI" },
+  { id: "indoornav",   label: "Indoor Nav",     color: CYAN,   tagline: "Visually Impaired" },
+  { id: "ergomate",    label: "Ergomate",       color: AMBER,  tagline: "IoT Office System" },
 ];
 
 const PROJECT_COMPONENTS = {
   ulma: ULMAProject,
   dualstgf: DualSTGFProject,
+  dualgraphshm: DualGraphSHMProject,
   mitacs: MitacsProject,
   necfe: NECFEProject,
   indoornav: IndoorNavProject,
