@@ -1051,40 +1051,78 @@ function NECFEProject() {
             <Tag color={PURPLE}>Explainable AI</Tag>
             <Tag color={GOLD}>GNN</Tag>
             <Tag color={GREEN}>Counterfactuals</Tag>
+            <Tag color={CYAN}>Dependable AI</Tag>
           </div>
           <h1 style={{ fontFamily: "'Playfair Display', Georgia, serif", fontSize: "clamp(32px, 5vw, 50px)", fontWeight: 900, color: "#111827", lineHeight: 1.1, margin: "0 0 16px" }}>NE-CFE</h1>
-          <p style={{ fontSize: 14, fontFamily: "'JetBrains Mono', monospace", color: MUTED, marginBottom: 8 }}>Node-Edge Counterfactual Explanations</p>
-          <p style={{ fontSize: "clamp(16px, 2.2vw, 20px)", color: TEXT, lineHeight: 1.5, maxWidth: 700, margin: "0 0 32px" }}>
-            Perturbation-based counterfactual explanations that jointly optimize node features and edge toggles via Binary-Concrete edge gates, making GNN predictions interpretable for safety-critical applications.
+          <p style={{ fontSize: 14, fontFamily: "'JetBrains Mono', monospace", color: MUTED, marginBottom: 8 }}>Perturbation-Based Counterfactual Explanations for GNN Explainability</p>
+          <p style={{ fontSize: "clamp(16px, 2.2vw, 20px)", color: TEXT, lineHeight: 1.5, maxWidth: 700, margin: "0 0 8px" }}>
+            A perturbation-based method that jointly optimizes node feature modifications and edge structure changes using Binary-Concrete relaxation and a composite loss with HEOM distance, generating minimal and plausible counterfactual explanations for GNN node classification.
           </p>
+          <p style={{ color: MUTED, fontSize: 14, margin: "0 0 32px" }}>R. Wijethunga, M. Kahawalage &mdash; Western University &middot; Dependable AI Course Project</p>
         </FadeIn>
         <div style={{ display: "flex", gap: 14, flexWrap: "wrap" }}>
-          <StatCard value="Node" label="Feature Perturbation" color={PURPLE} delay={0.1} />
-          <StatCard value="Edge" label="Binary-Concrete Gates" color={GOLD} delay={0.2} />
-          <StatCard value="Joint" label="Optimization" color={GREEN} delay={0.3} />
+          <StatCard value="3" label="Benchmark Datasets" color={PURPLE} delay={0.1} />
+          <StatCard value="Node+Edge" label="Joint Perturbation" color={GOLD} delay={0.2} />
+          <StatCard value="HEOM" label="Distance Metric" color={GREEN} delay={0.3} />
+          <StatCard value="GNN" label="Node Classification" color={CYAN} delay={0.4} />
         </div>
       </section>
 
       <Divider />
 
       <section style={{ paddingBottom: 56 }}>
-        <FadeIn><SectionTitle tag="Problem" tagColor={RED} title="Why GNN explanations need both nodes and edges" subtitle="Existing counterfactual methods for graphs either perturb node features or modify edges, but not both simultaneously." /></FadeIn>
+        <FadeIn><SectionTitle tag="Problem" tagColor={RED} title="Why GNN explanations need both nodes and edges" subtitle="Existing graph CF methods focus on either node features or edge structure, missing the interplay between topology and attributes." /></FadeIn>
         <CardGrid>
-          <FadeIn delay={0.1}><InfoCard icon={"\uD83E\uDDE9"} title="Node-Only Approaches" desc="Perturbing features alone ignores structural changes. A prediction might flip because of which connections exist, not just what values sensors report." /></FadeIn>
-          <FadeIn delay={0.2}><InfoCard icon={"\u2702\uFE0F"} title="Edge-Only Approaches" desc="Removing or adding edges misses feature-level explanations. The same graph structure with different node values can produce completely different predictions." /></FadeIn>
-          <FadeIn delay={0.3}><InfoCard icon={"\u2696\uFE0F"} title="Joint Optimization" desc="NE-CFE simultaneously optimizes both node feature perturbations and edge toggles using differentiable Binary-Concrete relaxation, finding minimal counterfactual edits." /></FadeIn>
+          <FadeIn delay={0.1}><InfoCard icon={"🧩"} title="Edge-Only Methods (CF-GNNExplainer)" desc="Methods like CF-GNNExplainer only remove edges to flip predictions. They cannot explain cases where feature changes are the minimal path to a different prediction." /></FadeIn>
+          <FadeIn delay={0.2}><InfoCard icon={"✂️"} title="No Edge Additions" desc="Most perturbation methods only delete edges. NE-CFE supports both edge additions and deletions via sigmoid-gated edge weight multipliers on incident edges." /></FadeIn>
+          <FadeIn delay={0.3}><InfoCard icon={"⚖️"} title="Plausibility Gap" desc="Standard L1/L2 distance fails for mixed discrete-continuous graph features. NE-CFE uses HEOM (Heterogeneous Euclidean-Overlap Metric) for distributional plausibility." /></FadeIn>
         </CardGrid>
       </section>
 
       <Divider />
 
       <section style={{ paddingBottom: 56 }}>
-        <FadeIn><SectionTitle tag="Method" tagColor={PURPLE} title="How NE-CFE works" subtitle="A differentiable framework for generating joint node-edge counterfactual explanations." /></FadeIn>
+        <FadeIn><SectionTitle tag="Method" tagColor={PURPLE} title="How NE-CFE works" subtitle="A differentiable optimization framework that builds on CF-GNNExplainer with three key extensions." /></FadeIn>
+
+        <FadeIn delay={0.05}>
+          <div style={{ background: CARD, border: `1px solid ${BORDER}`, borderRadius: 12, padding: 24, marginBottom: 20 }}>
+            <div style={{ color: "#111827", fontWeight: 700, fontSize: 14, marginBottom: 12 }}>Composite Loss Function</div>
+            <div style={{ background: "#F3F4F6", borderRadius: 8, padding: 18, fontFamily: "'JetBrains Mono', monospace", fontSize: 13, lineHeight: 2, color: "#111827" }}>
+              <strong>L</strong><sub>total</sub> = {"η"} L<sub>pred</sub> + (1 {"−"} {"α"}<sub>t</sub>) L<sub>edge</sub> + {"α"}<sub>t</sub> L<sub>node</sub> + {"λ"} L<sub>heom</sub>
+            </div>
+            <p style={{ color: MUTED, fontSize: 12, marginTop: 10, lineHeight: 1.6 }}>
+              {"η"} gates prediction loss (active until target class achieved). {"α"}<sub>t</sub> dynamically balances edge vs node perturbation focus across epochs. {"λ"} weights the HEOM plausibility term.
+            </p>
+          </div>
+        </FadeIn>
+
         <CardGrid minWidth={220}>
           {[
-            { icon: "\uD83C\uDFAF", title: "Counterfactual Objective", desc: "Minimize the distance between the perturbed input and original while ensuring the GNN's prediction changes to the target class.", color: PURPLE },
-            { icon: "\uD83C\uDF21\uFE0F", title: "Binary-Concrete Gates", desc: "Differentiable relaxation of discrete edge toggle decisions. During training, gates are soft; at inference, they snap to 0/1.", color: GOLD },
-            { icon: "\u2696\uFE0F", title: "Sparsity Regularization", desc: "L1 penalties on both node perturbations and edge gate activations ensure counterfactuals are minimal and human-interpretable.", color: GREEN },
+            { icon: "🎯", title: "Learnable Perturbation Tensors", desc: "Two parameter sets: P_x perturbs the target node's features; P_e generates sigmoid-gated edge weights on incident edges, enabling both additions and deletions.", color: PURPLE },
+            { icon: "🌡️", title: "Binary-Concrete Relaxation", desc: "Gumbel-Sigmoid relaxation converts discrete binary features into differentiable continuous values during training. Temperature τ is annealed to sharpen decisions.", color: GOLD },
+            { icon: "📏", title: "HEOM Distance", desc: "Heterogeneous Euclidean-Overlap Metric handles mixed discrete/continuous features: normalized L1 for continuous, exact overlap for categorical — more nuanced than standard L1/L2.", color: GREEN },
+            { icon: "🔄", title: "Dynamic α Scheduling", desc: "Trade-off coefficient α_t evolves across epochs, initially focusing on edge structure then shifting to node features, balancing topology and attribute perturbations.", color: CYAN },
+          ].map(c => (
+            <FadeIn key={c.title} delay={0.1}>
+              <div style={{ background: CARD, border: `1px solid ${BORDER}`, borderRadius: 10, padding: 20 }}>
+                <div style={{ fontSize: 22, marginBottom: 8 }}>{c.icon}</div>
+                <div style={{ color: c.color, fontWeight: 700, fontSize: 14, marginBottom: 6 }}>{c.title}</div>
+                <div style={{ color: TEXT, fontSize: 13, lineHeight: 1.6 }}>{c.desc}</div>
+              </div>
+            </FadeIn>
+          ))}
+        </CardGrid>
+      </section>
+
+      <Divider />
+
+      <section style={{ paddingBottom: 56 }}>
+        <FadeIn><SectionTitle tag="Evaluation" tagColor={CYAN} title="Benchmarks & datasets" subtitle="Evaluated on three standard citation network datasets for node classification." /></FadeIn>
+        <CardGrid>
+          {[
+            { icon: "📄", title: "Citeseer", desc: "3,327 nodes, 4,732 edges, 3,703 features, 6 classes. Academic paper citation network.", color: PURPLE },
+            { icon: "📚", title: "Cora", desc: "2,708 nodes, 5,429 edges, 1,433 features, 7 classes. ML paper citation network — the most widely-used GNN benchmark.", color: GOLD },
+            { icon: "🎓", title: "Cornell", desc: "183 nodes, 295 edges, 1,703 features, 5 classes. Small heterophilic web page graph from WebKB.", color: GREEN },
           ].map(c => (
             <FadeIn key={c.title} delay={0.1}>
               <div style={{ background: CARD, border: `1px solid ${BORDER}`, borderRadius: 10, padding: 20 }}>
@@ -1102,14 +1140,14 @@ function NECFEProject() {
       <section style={{ paddingBottom: 56 }}>
         <FadeIn><SectionTitle tag="Stack" tagColor={CYAN} title="Technical foundation" /></FadeIn>
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-          {["Python", "PyTorch", "PyG", "GNN", "XAI"].map(t => (
+          {["Python", "PyTorch", "PyG", "GNN", "XAI", "HEOM", "Binary-Concrete"].map(t => (
             <Tag key={t} color={PURPLE}>{t}</Tag>
           ))}
         </div>
       </section>
 
       <div style={{ borderTop: `1px solid ${BORDER}`, padding: "24px 0", textAlign: "center", color: MUTED, fontSize: 12 }}>
-        NE-CFE &mdash; Node-Edge Counterfactual Explanations for Graph Neural Networks
+        NE-CFE &mdash; Perturbation-Based Counterfactual Explanations for GNN Explainability &middot; Dependable AI Course Project
       </div>
     </div>
   );
@@ -2106,10 +2144,10 @@ function CERTSProject() {
         </FadeIn>
         <div style={{ marginTop: 24 }}>
           <CardGrid minWidth={240}>
-            <InfoCard icon="\u{1F332}" title="Non-Differentiable" desc="Tree ensembles lack gradients, making gradient-based CF methods inapplicable or unreliable." color={forestAccent} />
-            <InfoCard icon="\u{26A0}\u{FE0F}" title="Structurally Unstable" desc="Small data changes cause large tree structure shifts, invalidating previously valid counterfactuals." color={orangeAccent} />
-            <InfoCard icon="\u{1F9E9}" title="NP-Hard Search" desc="Finding optimal counterfactuals over discrete tree paths is combinatorially explosive." color={navyAccent} />
-            <InfoCard icon="\u{1F500}" title="Bagging vs Boosting" desc="Random Forests vs XGBoost/CatBoost have fundamentally different instability patterns." color={purpleAccent} />
+            <InfoCard icon={"🌲"} title="Non-Differentiable" desc="Tree ensembles lack gradients, making gradient-based CF methods inapplicable or unreliable." color={forestAccent} />
+            <InfoCard icon={"⚠️"} title="Structurally Unstable" desc="Small data changes cause large tree structure shifts, invalidating previously valid counterfactuals." color={orangeAccent} />
+            <InfoCard icon={"🧩"} title="NP-Hard Search" desc="Finding optimal counterfactuals over discrete tree paths is combinatorially explosive." color={navyAccent} />
+            <InfoCard icon={"🔀"} title="Bagging vs Boosting" desc="Random Forests vs XGBoost/CatBoost have fundamentally different instability patterns." color={purpleAccent} />
           </CardGrid>
         </div>
       </section>
@@ -2128,10 +2166,10 @@ function CERTSProject() {
         </FadeIn>
         <div style={{ marginTop: 24 }}>
           <CardGrid minWidth={240}>
-            <InfoCard icon="\u{1F3B2}" title="Perturbation Ensemble" desc="Generate K=10 perturbed model/data scenarios via random subsampling and hyperparameter variation to test robustness." color={orangeAccent} />
-            <InfoCard icon="\u{1F333}" title="MCTS" desc="Monte Carlo Tree Search explores the combinatorial feature space using UCB1 selection, constraint propagation, and rollout rewards." color={forestAccent} />
-            <InfoCard icon="\u{1F3AF}" title="Consensus Scoring" desc="Multi-objective scoring weights consensus across perturbed models, prediction margin, proximity, and sparsity." color={navyAccent} />
-            <InfoCard icon="\u{1F4CF}" title="HEOM Distance" desc="Heterogeneous Euclidean-Overlap Metric handles mixed categorical and numerical features natively." color={goldAccent} />
+            <InfoCard icon={"🎲"} title="Perturbation Ensemble" desc="Generate K=10 perturbed model/data scenarios via random subsampling and hyperparameter variation to test robustness." color={orangeAccent} />
+            <InfoCard icon={"🌳"} title="MCTS" desc="Monte Carlo Tree Search explores the combinatorial feature space using UCB1 selection, constraint propagation, and rollout rewards." color={forestAccent} />
+            <InfoCard icon={"🎯"} title="Consensus Scoring" desc="Multi-objective scoring weights consensus across perturbed models, prediction margin, proximity, and sparsity." color={navyAccent} />
+            <InfoCard icon={"📏"} title="HEOM Distance" desc="Heterogeneous Euclidean-Overlap Metric handles mixed categorical and numerical features natively." color={goldAccent} />
           </CardGrid>
         </div>
       </section>
