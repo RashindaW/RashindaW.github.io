@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Interactive Project Explainers | Rashinda Wijethunga</title>
-<meta name="description" content="Interactive explainers for DualSTGF (Dual-View Spectral-Temporal Graph Fusion) and ULMA (User Lifecycle Management Agent) by Rashinda Wijethunga.">
+<meta name="description" content="Interactive project explainers by Rashinda Wijethunga — ULMA, DualSTGF, Mitacs Leak Detection, NE-CFE, Indoor Navigation, and Ergomate.">
 <meta property="og:type" content="website">
 <meta property="og:title" content="Interactive Project Explainers — Rashinda Wijethunga">
 <meta property="og:description" content="Deep dives into DualSTGF fault detection and ULMA multi-agent automation with interactive charts, architecture diagrams, and results.">
@@ -809,13 +809,332 @@ function ULMAProject() {
 }
 
 // ══════════════════════════════════════════════
+// ─── MITACS LEAK DETECTION ───
+// ══════════════════════════════════════════════
+
+function MitacsProject() {
+  return (
+    <div>
+      <section style={{ paddingTop: 64, paddingBottom: 48 }}>
+        <FadeIn>
+          <div style={{ display: "flex", gap: 8, marginBottom: 20, flexWrap: "wrap" }}>
+            <Tag color={GREEN}>Industry Deployment</Tag>
+            <Tag color={GOLD}>GNN</Tag>
+            <Tag color={BLUE}>Anomaly Detection</Tag>
+            <Tag color={PURPLE}>XAI</Tag>
+          </div>
+          <h1 style={{ fontFamily: "'Playfair Display', Georgia, serif", fontSize: "clamp(32px, 5vw, 50px)", fontWeight: 900, color: "#fff", lineHeight: 1.1, margin: "0 0 16px" }}>
+            CO&#8322; Refrigeration Leak Detection
+          </h1>
+          <p style={{ fontSize: "clamp(16px, 2.2vw, 20px)", color: TEXT, lineHeight: 1.5, maxWidth: 700, margin: "0 0 8px" }}>
+            Spatio-temporal GNN for incipient and catastrophic leak detection in supermarket CO&#8322; refrigeration systems with counterfactual explainability.
+          </p>
+          <p style={{ color: MUTED, fontSize: 14, margin: "0 0 32px" }}>Phase II Mitacs Project with Neelands Group &mdash; Western University</p>
+          <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
+            <a href="https://doi.org/10.3390/en17030736" target="_blank" rel="noopener" style={{ display: "inline-flex", alignItems: "center", gap: 8, padding: "12px 28px", borderRadius: 8, fontSize: 14, fontWeight: 600, background: GREEN, color: "#0A0E17", textDecoration: "none" }}>Read Paper</a>
+          </div>
+        </FadeIn>
+        <div style={{ display: "flex", gap: 14, flexWrap: "wrap", marginTop: 40 }}>
+          <StatCard value="Phase II" label="Mitacs Accelerate" color={GREEN} delay={0.1} />
+          <StatCard value="CO\u2082" label="Refrigerant System" color={BLUE} delay={0.2} />
+          <StatCard value="GNN" label="Spatio-Temporal" color={GOLD} delay={0.3} />
+          <StatCard value="XAI" label="Counterfactual" color={PURPLE} delay={0.4} />
+        </div>
+      </section>
+
+      <Divider />
+
+      <section style={{ paddingBottom: 56 }}>
+        <FadeIn><SectionTitle tag="Challenge" tagColor={RED} title="Why refrigerant leak detection is hard" subtitle="CO\u2082 refrigeration systems in supermarkets have complex multi-zone architectures where leaks are subtle and costly." /></FadeIn>
+        <CardGrid>
+          <FadeIn delay={0.1}><InfoCard icon={"\u2744\uFE0F"} title="Incipient Leaks" desc="Small, slow leaks that gradually degrade system performance. Traditional threshold-based alarms miss them entirely until significant refrigerant loss occurs." /></FadeIn>
+          <FadeIn delay={0.2}><InfoCard icon={"\uD83D\uDCA5"} title="Catastrophic Failures" desc="Sudden, large-scale leaks that can cause system shutdown, product loss, and safety hazards. Early detection of precursor patterns is critical." /></FadeIn>
+          <FadeIn delay={0.3}><InfoCard icon={"\uD83D\uDD17"} title="Sensor Interdependencies" desc="Dozens of interconnected sensors (temperature, pressure, flow) across compressors, condensers, and display cases. Faults propagate through the sensor graph." /></FadeIn>
+        </CardGrid>
+      </section>
+
+      <Divider />
+
+      <section style={{ paddingBottom: 56 }}>
+        <FadeIn><SectionTitle tag="Approach" tagColor={GOLD} title="Graph-based fault detection pipeline" subtitle="Model inter-sensor relationships as a dynamic graph and detect anomalies through changes in graph topology and node behavior." /></FadeIn>
+        <CardGrid minWidth={220}>
+          {[
+            { icon: "\uD83D\uDCCA", title: "Dynamic Graph Construction", desc: "Sensors as nodes, learned attention-based edges. Graph structure evolves over time to capture changing dependencies.", color: GOLD },
+            { icon: "\u23F1", title: "Temporal Modeling", desc: "GRU-based encoders capture per-sensor temporal dynamics within sliding windows of sensor readings.", color: BLUE },
+            { icon: "\uD83D\uDD0D", title: "Counterfactual Explanations", desc: "Generate minimal perturbations that change the model's prediction, revealing which sensor relationships drive each fault detection.", color: PURPLE },
+            { icon: "\u2601\uFE0F", title: "Azure Deployment", desc: "Production pipeline deployed on Azure cloud infrastructure for real-time monitoring of Neelands Group refrigeration systems.", color: CYAN },
+          ].map(c => (
+            <FadeIn key={c.title} delay={0.1}>
+              <div style={{ background: CARD, border: `1px solid ${BORDER}`, borderRadius: 10, padding: 20 }}>
+                <div style={{ fontSize: 22, marginBottom: 8 }}>{c.icon}</div>
+                <div style={{ color: c.color, fontWeight: 700, fontSize: 14, marginBottom: 6 }}>{c.title}</div>
+                <div style={{ color: TEXT, fontSize: 13, lineHeight: 1.6 }}>{c.desc}</div>
+              </div>
+            </FadeIn>
+          ))}
+        </CardGrid>
+      </section>
+
+      <Divider />
+
+      <section style={{ paddingBottom: 56 }}>
+        <FadeIn><SectionTitle tag="Stack" tagColor={CYAN} title="Technical foundation" /></FadeIn>
+        <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+          {["Python", "PyTorch", "PyG", "CatBoost", "Time-Series", "Azure"].map(t => (
+            <Tag key={t} color={BLUE}>{t}</Tag>
+          ))}
+        </div>
+      </section>
+
+      <div style={{ borderTop: `1px solid ${BORDER}`, padding: "24px 0", textAlign: "center", color: MUTED, fontSize: 12 }}>
+        Mitacs CO&#8322; Refrigeration Leak Detection &mdash; Published in Energies (2024) &middot; <a href="https://doi.org/10.3390/en17030736" target="_blank" rel="noopener" style={{ color: CYAN }}>DOI</a>
+      </div>
+    </div>
+  );
+}
+
+// ══════════════════════════════════════════════
+// ─── NE-CFE (COUNTERFACTUAL EXPLANATIONS) ───
+// ══════════════════════════════════════════════
+
+function NECFEProject() {
+  return (
+    <div>
+      <section style={{ paddingTop: 64, paddingBottom: 48 }}>
+        <FadeIn>
+          <div style={{ display: "flex", gap: 8, marginBottom: 20, flexWrap: "wrap" }}>
+            <Tag color={PURPLE}>Explainable AI</Tag>
+            <Tag color={GOLD}>GNN</Tag>
+            <Tag color={GREEN}>Counterfactuals</Tag>
+          </div>
+          <h1 style={{ fontFamily: "'Playfair Display', Georgia, serif", fontSize: "clamp(32px, 5vw, 50px)", fontWeight: 900, color: "#fff", lineHeight: 1.1, margin: "0 0 16px" }}>NE-CFE</h1>
+          <p style={{ fontSize: 14, fontFamily: "'JetBrains Mono', monospace", color: MUTED, marginBottom: 8 }}>Node-Edge Counterfactual Explanations</p>
+          <p style={{ fontSize: "clamp(16px, 2.2vw, 20px)", color: TEXT, lineHeight: 1.5, maxWidth: 700, margin: "0 0 32px" }}>
+            Perturbation-based counterfactual explanations that jointly optimize node features and edge toggles via Binary-Concrete edge gates, making GNN predictions interpretable for safety-critical applications.
+          </p>
+        </FadeIn>
+        <div style={{ display: "flex", gap: 14, flexWrap: "wrap" }}>
+          <StatCard value="Node" label="Feature Perturbation" color={PURPLE} delay={0.1} />
+          <StatCard value="Edge" label="Binary-Concrete Gates" color={GOLD} delay={0.2} />
+          <StatCard value="Joint" label="Optimization" color={GREEN} delay={0.3} />
+        </div>
+      </section>
+
+      <Divider />
+
+      <section style={{ paddingBottom: 56 }}>
+        <FadeIn><SectionTitle tag="Problem" tagColor={RED} title="Why GNN explanations need both nodes and edges" subtitle="Existing counterfactual methods for graphs either perturb node features or modify edges, but not both simultaneously." /></FadeIn>
+        <CardGrid>
+          <FadeIn delay={0.1}><InfoCard icon={"\uD83E\uDDE9"} title="Node-Only Approaches" desc="Perturbing features alone ignores structural changes. A prediction might flip because of which connections exist, not just what values sensors report." /></FadeIn>
+          <FadeIn delay={0.2}><InfoCard icon={"\u2702\uFE0F"} title="Edge-Only Approaches" desc="Removing or adding edges misses feature-level explanations. The same graph structure with different node values can produce completely different predictions." /></FadeIn>
+          <FadeIn delay={0.3}><InfoCard icon={"\u2696\uFE0F"} title="Joint Optimization" desc="NE-CFE simultaneously optimizes both node feature perturbations and edge toggles using differentiable Binary-Concrete relaxation, finding minimal counterfactual edits." /></FadeIn>
+        </CardGrid>
+      </section>
+
+      <Divider />
+
+      <section style={{ paddingBottom: 56 }}>
+        <FadeIn><SectionTitle tag="Method" tagColor={PURPLE} title="How NE-CFE works" subtitle="A differentiable framework for generating joint node-edge counterfactual explanations." /></FadeIn>
+        <CardGrid minWidth={220}>
+          {[
+            { icon: "\uD83C\uDFAF", title: "Counterfactual Objective", desc: "Minimize the distance between the perturbed input and original while ensuring the GNN's prediction changes to the target class.", color: PURPLE },
+            { icon: "\uD83C\uDF21\uFE0F", title: "Binary-Concrete Gates", desc: "Differentiable relaxation of discrete edge toggle decisions. During training, gates are soft; at inference, they snap to 0/1.", color: GOLD },
+            { icon: "\u2696\uFE0F", title: "Sparsity Regularization", desc: "L1 penalties on both node perturbations and edge gate activations ensure counterfactuals are minimal and human-interpretable.", color: GREEN },
+          ].map(c => (
+            <FadeIn key={c.title} delay={0.1}>
+              <div style={{ background: CARD, border: `1px solid ${BORDER}`, borderRadius: 10, padding: 20 }}>
+                <div style={{ fontSize: 22, marginBottom: 8 }}>{c.icon}</div>
+                <div style={{ color: c.color, fontWeight: 700, fontSize: 14, marginBottom: 6 }}>{c.title}</div>
+                <div style={{ color: TEXT, fontSize: 13, lineHeight: 1.6 }}>{c.desc}</div>
+              </div>
+            </FadeIn>
+          ))}
+        </CardGrid>
+      </section>
+
+      <Divider />
+
+      <section style={{ paddingBottom: 56 }}>
+        <FadeIn><SectionTitle tag="Stack" tagColor={CYAN} title="Technical foundation" /></FadeIn>
+        <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+          {["Python", "PyTorch", "PyG", "GNN", "XAI"].map(t => (
+            <Tag key={t} color={PURPLE}>{t}</Tag>
+          ))}
+        </div>
+      </section>
+
+      <div style={{ borderTop: `1px solid ${BORDER}`, padding: "24px 0", textAlign: "center", color: MUTED, fontSize: 12 }}>
+        NE-CFE &mdash; Node-Edge Counterfactual Explanations for Graph Neural Networks
+      </div>
+    </div>
+  );
+}
+
+// ══════════════════════════════════════════════
+// ─── INDOOR NAVIGATION ───
+// ══════════════════════════════════════════════
+
+function IndoorNavProject() {
+  return (
+    <div>
+      <section style={{ paddingTop: 64, paddingBottom: 48 }}>
+        <FadeIn>
+          <div style={{ display: "flex", gap: 8, marginBottom: 20, flexWrap: "wrap" }}>
+            <Tag color={CYAN}>IoT</Tag>
+            <Tag color={GREEN}>Accessibility</Tag>
+            <Tag color={GOLD}>Machine Learning</Tag>
+          </div>
+          <h1 style={{ fontFamily: "'Playfair Display', Georgia, serif", fontSize: "clamp(32px, 5vw, 50px)", fontWeight: 900, color: "#fff", lineHeight: 1.1, margin: "0 0 16px" }}>Indoor Navigation</h1>
+          <p style={{ fontSize: 14, fontFamily: "'JetBrains Mono', monospace", color: MUTED, marginBottom: 8 }}>For the Visually Impaired</p>
+          <p style={{ fontSize: "clamp(16px, 2.2vw, 20px)", color: TEXT, lineHeight: 1.5, maxWidth: 700, margin: "0 0 32px" }}>
+            BLE beacon-based indoor navigation system with ML proximity model and hybrid Kalman-Median filter, developed in collaboration with The Ceylon School for the Deaf and Blind.
+          </p>
+        </FadeIn>
+        <div style={{ display: "flex", gap: 14, flexWrap: "wrap" }}>
+          <StatCard value="BLE" label="Beacon Technology" color={CYAN} delay={0.1} />
+          <StatCard value="ML" label="Proximity Model" color={GOLD} delay={0.2} />
+          <StatCard value="Hybrid" label="Kalman-Median Filter" color={GREEN} delay={0.3} />
+        </div>
+      </section>
+
+      <Divider />
+
+      <section style={{ paddingBottom: 56 }}>
+        <FadeIn><SectionTitle tag="Impact" tagColor={GREEN} title="Technology for social good" subtitle="Designed with and for the visually impaired community in Sri Lanka." /></FadeIn>
+        <CardGrid>
+          <FadeIn delay={0.1}><InfoCard icon={"\uD83D\uDCF6"} title="BLE Beacon Infrastructure" desc="Low-cost Bluetooth Low Energy beacons deployed throughout indoor spaces provide proximity signals without requiring GPS or WiFi triangulation." /></FadeIn>
+          <FadeIn delay={0.2}><InfoCard icon={"\uD83E\uDDE0"} title="ML Proximity Estimation" desc="Machine learning model trained on RSSI signal patterns to estimate accurate distances despite multipath interference and signal fluctuations in indoor environments." /></FadeIn>
+          <FadeIn delay={0.3}><InfoCard icon={"\uD83D\uDCCD"} title="Hybrid Kalman-Median Filter" desc="Combines Kalman filter's optimal state estimation with median filtering's robustness to outliers, achieving reliable position tracking in noisy indoor RF environments." /></FadeIn>
+        </CardGrid>
+      </section>
+
+      <Divider />
+
+      <section style={{ paddingBottom: 56 }}>
+        <FadeIn><SectionTitle tag="Stack" tagColor={CYAN} title="Technical foundation" /></FadeIn>
+        <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+          {["Python", "BLE", "Kalman Filter", "IoT"].map(t => (
+            <Tag key={t} color={CYAN}>{t}</Tag>
+          ))}
+        </div>
+      </section>
+
+      <div style={{ borderTop: `1px solid ${BORDER}`, padding: "24px 0", textAlign: "center", color: MUTED, fontSize: 12 }}>
+        Indoor Navigation &mdash; Collaboration with The Ceylon School for the Deaf and Blind &middot; University of Moratuwa
+      </div>
+    </div>
+  );
+}
+
+// ══════════════════════════════════════════════
+// ─── ERGOMATE ───
+// ══════════════════════════════════════════════
+
+function ErgomateProject() {
+  const images = [
+    { src: "/assets/img/ergomate-team.jpg", alt: "Ergomate team with award" },
+    { src: "/assets/img/ergomate-dashboard.jpg", alt: "Ergomate dashboard" },
+    { src: "/assets/img/ergomate-workspace.jpg", alt: "Ergomate workspace" },
+    { src: "/assets/img/ergomate-chair.jpg", alt: "Ergonomic chair" },
+    { src: "/assets/img/ergomate-hardware.jpg", alt: "IoT hardware" },
+  ];
+  const [idx, setIdx] = useState(0);
+
+  return (
+    <div>
+      <section style={{ paddingTop: 64, paddingBottom: 48 }}>
+        <FadeIn>
+          <div style={{ display: "flex", gap: 8, marginBottom: 20, flexWrap: "wrap" }}>
+            <Tag color={AMBER}>IoT</Tag>
+            <Tag color={CYAN}>Arduino</Tag>
+            <Tag color={GREEN}>Award Winner</Tag>
+          </div>
+          <h1 style={{ fontFamily: "'Playfair Display', Georgia, serif", fontSize: "clamp(32px, 5vw, 50px)", fontWeight: 900, color: "#fff", lineHeight: 1.1, margin: "0 0 16px" }}>Ergomate</h1>
+          <p style={{ fontSize: 14, fontFamily: "'JetBrains Mono', monospace", color: MUTED, marginBottom: 8 }}>IoT-Based Ergonomic Office System</p>
+          <p style={{ fontSize: "clamp(16px, 2.2vw, 20px)", color: TEXT, lineHeight: 1.5, maxWidth: 700, margin: "0 0 32px" }}>
+            Smart office system monitoring posture, hydration, air quality, and drowsiness via webcam &mdash; with user alerts and HR analytics dashboard.
+            2nd place at SLIoT 2018 (Sri Lanka's largest IoT competition). Built during internship at Millennium IT ESP.
+          </p>
+        </FadeIn>
+        <div style={{ display: "flex", gap: 14, flexWrap: "wrap" }}>
+          <StatCard value="2nd" label="SLIoT 2018" color={AMBER} delay={0.1} />
+          <StatCard value="4" label="Health Metrics" color={GREEN} delay={0.2} />
+          <StatCard value="IoT" label="Sensor Network" color={CYAN} delay={0.3} />
+        </div>
+      </section>
+
+      <Divider />
+
+      {/* Image gallery */}
+      <section style={{ paddingBottom: 56 }}>
+        <FadeIn><SectionTitle tag="Gallery" tagColor={AMBER} title="Project showcase" /></FadeIn>
+        <FadeIn delay={0.1}>
+          <div style={{ background: CARD, border: `1px solid ${BORDER}`, borderRadius: 14, overflow: "hidden" }}>
+            <img src={images[idx].src} alt={images[idx].alt} style={{ width: "100%", height: 400, objectFit: "cover", display: "block" }} />
+            <div style={{ display: "flex", justifyContent: "center", gap: 8, padding: "16px" }}>
+              {images.map((_, i) => (
+                <button key={i} onClick={() => setIdx(i)} style={{
+                  width: 10, height: 10, borderRadius: "50%",
+                  background: i === idx ? AMBER : BORDER,
+                  border: "none", cursor: "pointer", transition: "all 0.2s",
+                }} aria-label={`View image ${i + 1}`} />
+              ))}
+            </div>
+          </div>
+        </FadeIn>
+      </section>
+
+      <Divider />
+
+      <section style={{ paddingBottom: 56 }}>
+        <FadeIn><SectionTitle tag="Features" tagColor={GREEN} title="What Ergomate monitors" subtitle="A comprehensive office wellness system with real-time alerts." /></FadeIn>
+        <CardGrid>
+          <FadeIn delay={0.1}><InfoCard icon={"\uD83E\uDDD1\u200D\uD83D\uDCBB"} title="Posture Detection" desc="Webcam-based posture analysis alerts users when they slouch or maintain poor ergonomic position for extended periods." /></FadeIn>
+          <FadeIn delay={0.2}><InfoCard icon={"\uD83D\uDCA7"} title="Hydration Tracking" desc="Smart water bottle integration reminds users to stay hydrated based on time intervals and environmental conditions." /></FadeIn>
+          <FadeIn delay={0.3}><InfoCard icon={"\uD83C\uDF2C\uFE0F"} title="Air Quality" desc="Environmental sensors monitor CO\u2082 levels, temperature, and humidity, alerting when conditions affect productivity." /></FadeIn>
+          <FadeIn delay={0.4}><InfoCard icon={"\uD83D\uDE34"} title="Drowsiness Detection" desc="Computer vision-based drowsiness monitoring using webcam eye-tracking to detect fatigue during work hours." /></FadeIn>
+        </CardGrid>
+      </section>
+
+      <Divider />
+
+      <section style={{ paddingBottom: 56 }}>
+        <FadeIn><SectionTitle tag="Stack" tagColor={CYAN} title="Technical foundation" /></FadeIn>
+        <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+          {["IoT", "Arduino", "Python", "Dashboard", "Webcam", "Sensors"].map(t => (
+            <Tag key={t} color={AMBER}>{t}</Tag>
+          ))}
+        </div>
+      </section>
+
+      <div style={{ borderTop: `1px solid ${BORDER}`, padding: "24px 0", textAlign: "center", color: MUTED, fontSize: 12 }}>
+        Ergomate &mdash; 2nd Place, SLIoT 2018 &middot; Built at Millennium IT ESP
+      </div>
+    </div>
+  );
+}
+
+// ══════════════════════════════════════════════
 // ─── MAIN APP WITH PROJECT SWITCHER ───
 // ══════════════════════════════════════════════
 
 const PROJECTS = [
-  { id: "ulma", label: "ULMA", color: CYAN, tagline: "Multi-Agent IT Automation" },
-  { id: "dualstgf", label: "DualSTGF", color: GOLD, tagline: "Fault Detection GNN" },
+  { id: "ulma",      label: "ULMA",         color: CYAN,   tagline: "Multi-Agent IT Automation" },
+  { id: "dualstgf",  label: "DualSTGF",     color: GOLD,   tagline: "Fault Detection GNN" },
+  { id: "mitacs",    label: "Mitacs Leak",   color: GREEN,  tagline: "CO\u2082 Refrigeration" },
+  { id: "necfe",     label: "NE-CFE",       color: PURPLE, tagline: "Counterfactual XAI" },
+  { id: "indoornav", label: "Indoor Nav",   color: CYAN,   tagline: "Visually Impaired" },
+  { id: "ergomate",  label: "Ergomate",     color: AMBER,  tagline: "IoT Office System" },
 ];
+
+const PROJECT_COMPONENTS = {
+  ulma: ULMAProject,
+  dualstgf: DualSTGFProject,
+  mitacs: MitacsProject,
+  necfe: NECFEProject,
+  indoornav: IndoorNavProject,
+  ergomate: ErgomateProject,
+};
 
 function App() {
   const [active, setActive] = useState(() => {
@@ -828,6 +1147,8 @@ function App() {
     window.scrollTo({ top: 0, behavior: "smooth" });
   }, [active]);
 
+  const ActiveComponent = PROJECT_COMPONENTS[active];
+
   return (
     <div>
       {/* Top nav */}
@@ -838,35 +1159,33 @@ function App() {
         display: "flex", alignItems: "center",
         padding: "0 24px", height: 52,
       }}>
-        <a href="/" style={{ color: "#fff", textDecoration: "none", fontWeight: 700, fontSize: 13, paddingRight: 20, borderRight: `1px solid ${BORDER}`, marginRight: 8 }}>
+        <a href="/" style={{ color: "#fff", textDecoration: "none", fontWeight: 700, fontSize: 13, paddingRight: 16, borderRight: `1px solid ${BORDER}`, marginRight: 8, whiteSpace: "nowrap", flexShrink: 0 }}>
           &larr; Home
         </a>
 
-        {/* Project tabs */}
-        <div style={{ display: "flex", gap: 4, marginLeft: 8 }}>
+        {/* Project tabs - scrollable */}
+        <div style={{ display: "flex", gap: 2, marginLeft: 4, overflowX: "auto", flexShrink: 1, minWidth: 0 }}>
           {PROJECTS.map(p => (
             <button key={p.id} onClick={() => setActive(p.id)} style={{
-              padding: "8px 20px", borderRadius: 6, fontSize: 13, fontWeight: 600,
+              padding: "6px 14px", borderRadius: 6, fontSize: 12, fontWeight: 600,
               background: active === p.id ? p.color + "18" : "transparent",
               color: active === p.id ? p.color : MUTED,
               border: active === p.id ? `1px solid ${p.color}40` : "1px solid transparent",
-              transition: "all 0.2s",
+              transition: "all 0.2s", whiteSpace: "nowrap", flexShrink: 0,
             }}>
               {p.label}
-              <span style={{ display: "none", fontSize: 11, color: MUTED, marginLeft: 6 }}>{p.tagline}</span>
             </button>
           ))}
         </div>
 
         {/* Right links */}
-        <div style={{ marginLeft: "auto", display: "flex", gap: 16, fontSize: 12 }}>
-          <a href="/projects.html" style={{ color: MUTED, textDecoration: "none", fontWeight: 600 }}>All Projects</a>
-          <a href="/publications.html" style={{ color: MUTED, textDecoration: "none", fontWeight: 600 }}>Publications</a>
+        <div style={{ marginLeft: "auto", display: "flex", gap: 16, fontSize: 12, flexShrink: 0, paddingLeft: 12 }}>
+          <a href="/publications.html" style={{ color: MUTED, textDecoration: "none", fontWeight: 600, whiteSpace: "nowrap" }}>Publications</a>
         </div>
       </nav>
 
       <div id="main-content" style={{ maxWidth: 960, margin: "0 auto", padding: "0 24px" }}>
-        {active === "ulma" ? <ULMAProject /> : <DualSTGFProject />}
+        <ActiveComponent />
       </div>
     </div>
   );
