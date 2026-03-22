@@ -17,15 +17,15 @@
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=IBM+Plex+Mono:wght@400;500;600&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <style>
   :root {
-    --bg: #0A0E17;
-    --bg2: #0F1420;
-    --surface: #151B2B;
-    --surface2: #1A2236;
-    --border: #1E2A42;
-    --border-hi: #2A3A5C;
-    --text: #C4CDE0;
-    --muted: #5A6A8A;
-    --white: #EDF0F7;
+    --bg: #FFFFFF;
+    --bg2: #F9FAFB;
+    --surface: #FFFFFF;
+    --surface2: #F3F4F6;
+    --border: #E5E7EB;
+    --border-hi: #D1D5DB;
+    --text: #374151;
+    --muted: #6B7280;
+    --white: #111827;
     --cyan: #38BDF8;
     --cyan-dim: #1B6B9A;
     --green: #34D399;
@@ -54,7 +54,7 @@
       linear-gradient(var(--border) 1px, transparent 1px),
       linear-gradient(90deg, var(--border) 1px, transparent 1px);
     background-size: 60px 60px;
-    opacity: 0.12;
+    opacity: 0;
     pointer-events: none;
     z-index: 0;
   }
@@ -168,7 +168,7 @@
 
   .cta--primary {
     background: var(--cyan);
-    color: #0A0E17;
+    color: #FFFFFF;
   }
   .cta--primary:hover { background: #7DD3FC; transform: translateY(-2px); box-shadow: 0 8px 30px rgba(56,189,248,0.2); }
 
@@ -543,7 +543,7 @@
     transition: all 0.2s;
   }
   .sim-btn:hover { border-color: var(--cyan); color: var(--cyan); }
-  .sim-btn.active { background: var(--cyan); color: #0A0E17; border-color: var(--cyan); }
+  .sim-btn.active { background: var(--cyan); color: #FFFFFF; border-color: var(--cyan); }
 
   .sim-speed {
     margin-left: auto;
@@ -891,7 +891,7 @@
   /* SITE NAV */
   .site-nav {
     position: sticky; top: 0; z-index: 100;
-    background: rgba(8,10,14,0.92); backdrop-filter: blur(12px);
+    background: rgba(255,255,255,0.92); backdrop-filter: blur(12px);
     border-bottom: 1px solid var(--border);
     padding: 0 28px; display: flex; align-items: center;
     gap: 20px; height: 48px; font-size: 13px;
@@ -1056,21 +1056,21 @@
           </defs>
 
           <!-- RAW DATASET -->
-          <rect x="340" y="10" width="240" height="36" rx="5" fill="#1E2A42" stroke="#2A3A5C"/>
-          <text x="460" y="33" text-anchor="middle" font-size="13" font-weight="700" fill="#EDF0F7">Raw Dataset</text>
+          <rect x="340" y="10" width="240" height="36" rx="5" fill="#F3F4F6" stroke="#D1D5DB"/>
+          <text x="460" y="33" text-anchor="middle" font-size="13" font-weight="700" fill="#111827">Raw Dataset</text>
 
           <line x1="460" y1="46" x2="460" y2="66" stroke="#555" stroke-width="1.5" marker-end="url(#p1a)"/>
 
           <!-- DATA PREPROCESSING -->
-          <rect x="340" y="70" width="240" height="36" rx="5" fill="#1E2A42" stroke="#2A3A5C"/>
-          <text x="460" y="93" text-anchor="middle" font-size="12" font-weight="600" fill="#EDF0F7">Data Preprocessing</text>
+          <rect x="340" y="70" width="240" height="36" rx="5" fill="#F3F4F6" stroke="#D1D5DB"/>
+          <text x="460" y="93" text-anchor="middle" font-size="12" font-weight="600" fill="#111827">Data Preprocessing</text>
 
           <line x1="460" y1="106" x2="460" y2="126" stroke="#555" stroke-width="1.5" marker-end="url(#p1a)"/>
 
           <!-- IDENTIFICATION -->
-          <rect x="300" y="130" width="320" height="50" rx="5" fill="#1E2A42" stroke="#2A3A5C"/>
-          <text x="460" y="152" text-anchor="middle" font-size="11" font-weight="600" fill="#EDF0F7">Identification of Leak events,</text>
-          <text x="460" y="168" text-anchor="middle" font-size="11" font-weight="600" fill="#EDF0F7">Service dates, and Normal Operation</text>
+          <rect x="300" y="130" width="320" height="50" rx="5" fill="#F3F4F6" stroke="#D1D5DB"/>
+          <text x="460" y="152" text-anchor="middle" font-size="11" font-weight="600" fill="#111827">Identification of Leak events,</text>
+          <text x="460" y="168" text-anchor="middle" font-size="11" font-weight="600" fill="#111827">Service dates, and Normal Operation</text>
 
           <!-- Split into two branches -->
           <line x1="460" y1="180" x2="460" y2="200" stroke="#555" stroke-width="1.5"/>
@@ -1084,17 +1084,17 @@
 
           <line x1="230" y1="252" x2="230" y2="268" stroke="#555" stroke-width="1.5" marker-end="url(#p1a)"/>
 
-          <rect x="130" y="272" width="200" height="30" rx="4" fill="#1E2A42" stroke="#2A3A5C"/>
-          <text x="230" y="292" text-anchor="middle" font-size="11" font-weight="600" fill="#EDF0F7">Feature Engineering</text>
+          <rect x="130" y="272" width="200" height="30" rx="4" fill="#F3F4F6" stroke="#D1D5DB"/>
+          <text x="230" y="292" text-anchor="middle" font-size="11" font-weight="600" fill="#111827">Feature Engineering</text>
 
           <line x1="230" y1="302" x2="230" y2="316" stroke="#555" stroke-width="1.5"/>
 
           <!-- Train/Val/Test split -->
-          <rect x="82" y="320" width="68" height="28" rx="3" fill="#1E2A42" stroke="#38BDF8" stroke-width="1"/>
+          <rect x="82" y="320" width="68" height="28" rx="3" fill="#F3F4F6" stroke="#38BDF8" stroke-width="1"/>
           <text x="116" y="339" text-anchor="middle" font-size="9" font-weight="600" fill="#38BDF8">Train Set</text>
-          <rect x="158" y="320" width="68" height="28" rx="3" fill="#1E2A42" stroke="#FBBF24" stroke-width="1"/>
+          <rect x="158" y="320" width="68" height="28" rx="3" fill="#F3F4F6" stroke="#FBBF24" stroke-width="1"/>
           <text x="192" y="339" text-anchor="middle" font-size="9" font-weight="600" fill="#FBBF24">Val Set</text>
-          <rect x="234" y="320" width="68" height="28" rx="3" fill="#1E2A42" stroke="#F87171" stroke-width="1"/>
+          <rect x="234" y="320" width="68" height="28" rx="3" fill="#F3F4F6" stroke="#F87171" stroke-width="1"/>
           <text x="268" y="339" text-anchor="middle" font-size="9" font-weight="600" fill="#F87171">Test Set</text>
 
           <line x1="116" y1="348" x2="188" y2="370" stroke="#555" stroke-width="1" stroke-dasharray="3 2"/>
@@ -1107,8 +1107,8 @@
 
           <line x1="230" y1="402" x2="230" y2="420" stroke="#555" stroke-width="1.5" marker-end="url(#p1a)"/>
 
-          <rect x="108" y="424" width="244" height="30" rx="4" fill="#1E2A42" stroke="#2A3A5C"/>
-          <text x="230" y="444" text-anchor="middle" font-size="10" font-weight="600" fill="#EDF0F7">Prediction Error for Target feature i</text>
+          <rect x="108" y="424" width="244" height="30" rx="4" fill="#F3F4F6" stroke="#D1D5DB"/>
+          <text x="230" y="444" text-anchor="middle" font-size="10" font-weight="600" fill="#111827">Prediction Error for Target feature i</text>
 
           <line x1="230" y1="454" x2="230" y2="472" stroke="#555" stroke-width="1.5" marker-end="url(#p1a)"/>
 
@@ -1134,17 +1134,17 @@
 
           <line x1="690" y1="252" x2="690" y2="268" stroke="#555" stroke-width="1.5" marker-end="url(#p1a)"/>
 
-          <rect x="590" y="272" width="200" height="30" rx="4" fill="#1E2A42" stroke="#2A3A5C"/>
-          <text x="690" y="292" text-anchor="middle" font-size="11" font-weight="600" fill="#EDF0F7">Feature Engineering</text>
+          <rect x="590" y="272" width="200" height="30" rx="4" fill="#F3F4F6" stroke="#D1D5DB"/>
+          <text x="690" y="292" text-anchor="middle" font-size="11" font-weight="600" fill="#111827">Feature Engineering</text>
 
           <line x1="690" y1="302" x2="690" y2="316" stroke="#555" stroke-width="1.5"/>
 
           <!-- Train/Val/Test slow -->
-          <rect x="542" y="320" width="68" height="28" rx="3" fill="#1E2A42" stroke="#38BDF8" stroke-width="1"/>
+          <rect x="542" y="320" width="68" height="28" rx="3" fill="#F3F4F6" stroke="#38BDF8" stroke-width="1"/>
           <text x="576" y="339" text-anchor="middle" font-size="9" font-weight="600" fill="#38BDF8">Train Set</text>
-          <rect x="618" y="320" width="68" height="28" rx="3" fill="#1E2A42" stroke="#FBBF24" stroke-width="1"/>
+          <rect x="618" y="320" width="68" height="28" rx="3" fill="#F3F4F6" stroke="#FBBF24" stroke-width="1"/>
           <text x="652" y="339" text-anchor="middle" font-size="9" font-weight="600" fill="#FBBF24">Val Set</text>
-          <rect x="694" y="320" width="68" height="28" rx="3" fill="#1E2A42" stroke="#F87171" stroke-width="1"/>
+          <rect x="694" y="320" width="68" height="28" rx="3" fill="#F3F4F6" stroke="#F87171" stroke-width="1"/>
           <text x="728" y="339" text-anchor="middle" font-size="9" font-weight="600" fill="#F87171">Test Set</text>
 
           <line x1="576" y1="348" x2="650" y2="370" stroke="#555" stroke-width="1" stroke-dasharray="3 2"/>
@@ -1157,23 +1157,23 @@
 
           <line x1="690" y1="402" x2="690" y2="420" stroke="#555" stroke-width="1.5" marker-end="url(#p1a)"/>
 
-          <rect x="568" y="424" width="244" height="30" rx="4" fill="#1E2A42" stroke="#2A3A5C"/>
-          <text x="690" y="444" text-anchor="middle" font-size="10" font-weight="600" fill="#EDF0F7">Prediction Error for Target feature i</text>
+          <rect x="568" y="424" width="244" height="30" rx="4" fill="#F3F4F6" stroke="#D1D5DB"/>
+          <text x="690" y="444" text-anchor="middle" font-size="10" font-weight="600" fill="#111827">Prediction Error for Target feature i</text>
 
           <line x1="690" y1="454" x2="690" y2="472" stroke="#555" stroke-width="1.5" marker-end="url(#p1a)"/>
 
-          <rect x="568" y="476" width="244" height="30" rx="4" fill="#1E2A42" stroke="#2A3A5C"/>
-          <text x="690" y="496" text-anchor="middle" font-size="10" font-weight="600" fill="#EDF0F7">Cumsum of squared prediction error</text>
+          <rect x="568" y="476" width="244" height="30" rx="4" fill="#F3F4F6" stroke="#D1D5DB"/>
+          <text x="690" y="496" text-anchor="middle" font-size="10" font-weight="600" fill="#111827">Cumsum of squared prediction error</text>
 
           <line x1="690" y1="506" x2="690" y2="520" stroke="#555" stroke-width="1.5" marker-end="url(#p1a)"/>
 
-          <rect x="548" y="524" width="284" height="30" rx="4" fill="#1E2A42" stroke="#2A3A5C"/>
-          <text x="690" y="544" text-anchor="middle" font-size="10" font-weight="600" fill="#EDF0F7">Bi-weekly diff of Cumsum (remove rapid)</text>
+          <rect x="548" y="524" width="284" height="30" rx="4" fill="#F3F4F6" stroke="#D1D5DB"/>
+          <text x="690" y="544" text-anchor="middle" font-size="10" font-weight="600" fill="#111827">Bi-weekly diff of Cumsum (remove rapid)</text>
 
           <line x1="690" y1="554" x2="690" y2="568" stroke="#555" stroke-width="1.5" marker-end="url(#p1a)"/>
 
-          <rect x="568" y="572" width="244" height="30" rx="4" fill="#1E2A42" stroke="#2A3A5C"/>
-          <text x="690" y="592" text-anchor="middle" font-size="10" font-weight="600" fill="#EDF0F7">Sample into daily values (last of day)</text>
+          <rect x="568" y="572" width="244" height="30" rx="4" fill="#F3F4F6" stroke="#D1D5DB"/>
+          <text x="690" y="592" text-anchor="middle" font-size="10" font-weight="600" fill="#111827">Sample into daily values (last of day)</text>
 
           <line x1="690" y1="602" x2="690" y2="616" stroke="#555" stroke-width="1.5" marker-end="url(#p1a)"/>
 
@@ -2209,11 +2209,11 @@ class LeakSimulator {
     ctx.clearRect(0, 0, w, h);
 
     // Background
-    ctx.fillStyle = '#0A0E17';
+    ctx.fillStyle = '#F9FAFB';
     ctx.fillRect(0, 0, w, h);
 
     // Grid
-    ctx.strokeStyle = 'rgba(30,42,66,0.5)';
+    ctx.strokeStyle = 'rgba(209,213,219,0.5)';
     ctx.lineWidth = 1;
     for (let y = 0; y <= h; y += h / 6) {
       ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(w, y); ctx.stroke();
@@ -2221,7 +2221,7 @@ class LeakSimulator {
 
     // Zero line
     const midY = h / 2;
-    ctx.strokeStyle = 'rgba(90,106,138,0.4)';
+    ctx.strokeStyle = 'rgba(107,114,128,0.4)';
     ctx.setLineDash([4, 4]);
     ctx.beginPath(); ctx.moveTo(0, midY); ctx.lineTo(w, midY); ctx.stroke();
     ctx.setLineDash([]);
@@ -2237,7 +2237,7 @@ class LeakSimulator {
     ctx.setLineDash([]);
 
     // Labels
-    ctx.fillStyle = '#5A6A8A';
+    ctx.fillStyle = '#6B7280';
     ctx.font = '10px IBM Plex Mono, monospace';
     ctx.fillText('+' + this.hRollZ.toFixed(1) + 'σ', 4, threshY1 - 4);
     ctx.fillText('-' + this.hRollZ.toFixed(1) + 'σ', 4, threshY2 + 12);
