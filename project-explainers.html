@@ -1,0 +1,878 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Interactive Project Explainers | Rashinda Wijethunga</title>
+<meta name="description" content="Interactive explainers for DualSTGF (Dual-View Spectral-Temporal Graph Fusion) and ULMA (User Lifecycle Management Agent) by Rashinda Wijethunga.">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Interactive Project Explainers — Rashinda Wijethunga">
+<meta property="og:description" content="Deep dives into DualSTGF fault detection and ULMA multi-agent automation with interactive charts, architecture diagrams, and results.">
+<meta property="og:image" content="https://rashindaw.github.io/assets/img/profile.jpg">
+<meta property="og:url" content="https://rashindaw.github.io/project-explainers.html">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Interactive Project Explainers — Rashinda Wijethunga">
+<meta name="twitter:description" content="Deep dives into DualSTGF and ULMA with interactive visualizations.">
+<meta name="twitter:image" content="https://rashindaw.github.io/assets/img/profile.jpg">
+
+<!-- Fonts -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=DM+Serif+Display&family=JetBrains+Mono:wght@400;700;800&family=IBM+Plex+Mono:wght@400;500;600&family=Source+Sans+3:wght@300;400;600;700&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+<!-- React + Recharts CDN -->
+<script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+<script crossorigin src="https://unpkg.com/prop-types@15/prop-types.min.js"></script>
+<script crossorigin src="https://unpkg.com/recharts@2.15.3/umd/Recharts.js"></script>
+<script crossorigin src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body {
+    background: #0D0F14;
+    color: #C8CCD8;
+    font-family: 'Source Sans 3', 'Outfit', system-ui, sans-serif;
+    min-height: 100vh;
+    -webkit-font-smoothing: antialiased;
+  }
+  a { color: inherit; text-decoration: none; }
+  button { font-family: inherit; border: none; cursor: pointer; }
+  img { max-width: 100%; height: auto; }
+
+  .skip-link {
+    position: absolute; left: -9999px; top: auto;
+    width: 1px; height: 1px; overflow: hidden;
+    z-index: 100; padding: 8px 16px;
+    background: #111; color: #fff; font-size: 14px;
+    text-decoration: none; border-radius: 4px;
+  }
+  .skip-link:focus {
+    position: fixed; left: 16px; top: 16px;
+    width: auto; height: auto; overflow: visible;
+  }
+
+  /* Architecture image zoom */
+  .arch-img-wrapper {
+    position: relative; border: 1px solid #1E222C;
+    border-radius: 12px; overflow: hidden;
+    background: #fff; cursor: zoom-in;
+  }
+  .arch-img-wrapper.zoomed {
+    position: fixed; inset: 0; z-index: 200;
+    border-radius: 0; display: flex;
+    align-items: center; justify-content: center;
+    background: rgba(0,0,0,0.92); cursor: zoom-out; border: none;
+  }
+  .arch-img-wrapper.zoomed img {
+    max-height: 95vh; max-width: 95vw; object-fit: contain;
+  }
+
+  /* ULMA architecture SVG container */
+  .ulma-arch {
+    background: #FAFBFC; border-radius: 14px;
+    padding: 24px 16px; border: 1px solid #1E222C; overflow-x: auto;
+  }
+  .ulma-arch svg { display: block; margin: 0 auto; }
+
+  /* Video embed */
+  .video-wrap {
+    position: relative; border-radius: 14px; overflow: hidden;
+    border: 1px solid #2A3A5C;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.4), 0 0 0 1px rgba(56,189,248,0.08);
+    aspect-ratio: 16/9; background: #000;
+  }
+  .video-wrap iframe {
+    position: absolute; inset: 0; width: 100%; height: 100%; border: none;
+  }
+
+  #root { min-height: 100vh; }
+</style>
+</head>
+<body>
+<a href="#main-content" class="skip-link">Skip to content</a>
+<div id="root"></div>
+
+<script type="text/babel">
+const { useState, useEffect, useRef } = React;
+const { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend, Cell } = Recharts;
+
+// ─── DESIGN TOKENS ───
+const GOLD   = "#E8A838";
+const BLUE   = "#4EA8DE";
+const DARK   = "#0D0F14";
+const DARKER = "#080A0E";
+const CARD   = "#13161D";
+const BORDER = "#1E222C";
+const TEXT   = "#C8CCD8";
+const MUTED  = "#6B7280";
+const GREEN  = "#34D399";
+const RED    = "#F87171";
+const CYAN   = "#38BDF8";
+const PURPLE = "#A78BFA";
+const AMBER  = "#FBBF24";
+
+// ─── SHARED COMPONENTS ───
+function useInView(ref) {
+  const [visible, setVisible] = useState(false);
+  useEffect(() => {
+    if (!ref.current) return;
+    const obs = new IntersectionObserver(
+      ([e]) => { if (e.isIntersecting) setVisible(true); },
+      { threshold: 0.15 }
+    );
+    obs.observe(ref.current);
+    return () => obs.disconnect();
+  }, [ref]);
+  return visible;
+}
+
+function FadeIn({ children, delay = 0, className = "" }) {
+  const ref = useRef(null);
+  const visible = useInView(ref);
+  return (
+    <div ref={ref} className={className} style={{
+      opacity: visible ? 1 : 0,
+      transform: visible ? "translateY(0)" : "translateY(32px)",
+      transition: `all 0.7s cubic-bezier(0.22,1,0.36,1) ${delay}s`,
+    }}>
+      {children}
+    </div>
+  );
+}
+
+function Tag({ color, children }) {
+  return (
+    <span style={{
+      display: "inline-block", padding: "3px 10px", borderRadius: 4,
+      fontSize: 11, fontWeight: 700, letterSpacing: "0.06em",
+      textTransform: "uppercase", background: color + "18",
+      color, border: `1px solid ${color}30`,
+    }}>
+      {children}
+    </span>
+  );
+}
+
+function SectionTitle({ tag, tagColor, title, subtitle }) {
+  return (
+    <div style={{ marginBottom: 40 }}>
+      <Tag color={tagColor}>{tag}</Tag>
+      <h2 style={{
+        fontFamily: "'Playfair Display', 'DM Serif Display', Georgia, serif",
+        fontSize: "clamp(28px, 4vw, 42px)", fontWeight: 700,
+        color: "#fff", margin: "14px 0 10px", lineHeight: 1.15,
+      }}>
+        {title}
+      </h2>
+      {subtitle && (
+        <p style={{ color: MUTED, fontSize: 16, maxWidth: 600, lineHeight: 1.6 }}>{subtitle}</p>
+      )}
+    </div>
+  );
+}
+
+function StatCard({ value, label, color = GOLD, delay = 0 }) {
+  return (
+    <FadeIn delay={delay}>
+      <div style={{
+        background: CARD, border: `1px solid ${BORDER}`, borderRadius: 10,
+        padding: "24px 20px", textAlign: "center", minWidth: 140,
+      }}>
+        <div style={{
+          fontFamily: "'JetBrains Mono', 'IBM Plex Mono', monospace", fontSize: 28,
+          fontWeight: 800, color, lineHeight: 1,
+        }}>
+          {value}
+        </div>
+        <div style={{ color: MUTED, fontSize: 12, marginTop: 8, letterSpacing: "0.04em" }}>
+          {label}
+        </div>
+      </div>
+    </FadeIn>
+  );
+}
+
+function CardGrid({ children, minWidth = 280 }) {
+  return (
+    <div style={{
+      display: "grid",
+      gridTemplateColumns: `repeat(auto-fit, minmax(${minWidth}px, 1fr))`,
+      gap: 16,
+    }}>
+      {children}
+    </div>
+  );
+}
+
+function InfoCard({ icon, title, desc, color }) {
+  return (
+    <div style={{
+      background: CARD, border: `1px solid ${BORDER}`, borderRadius: 12,
+      padding: 28, height: "100%", transition: "border-color 0.3s, transform 0.3s",
+    }}
+    onMouseEnter={e => { e.currentTarget.style.borderColor = "#2A3A5C"; e.currentTarget.style.transform = "translateY(-3px)"; }}
+    onMouseLeave={e => { e.currentTarget.style.borderColor = BORDER; e.currentTarget.style.transform = "translateY(0)"; }}
+    >
+      <div style={{ fontSize: 28, marginBottom: 12 }}>{icon}</div>
+      <h3 style={{ color: "#fff", fontSize: 16, fontWeight: 700, marginBottom: 8 }}>{title}</h3>
+      <p style={{ color: TEXT, fontSize: 14, lineHeight: 1.65, margin: 0 }}>{desc}</p>
+    </div>
+  );
+}
+
+function Divider() {
+  return <hr style={{ border: "none", borderTop: `1px solid ${BORDER}`, margin: "0 0 48px" }} />;
+}
+
+// ══════════════════════════════════════════════
+// ─── DUALSTGF COMPONENTS ───
+// ══════════════════════════════════════════════
+
+function DualSTGFArchitectureImage() {
+  const [zoomed, setZoomed] = useState(false);
+  useEffect(() => {
+    if (!zoomed) return;
+    const handleEsc = (e) => { if (e.key === "Escape") setZoomed(false); };
+    window.addEventListener("keydown", handleEsc);
+    return () => window.removeEventListener("keydown", handleEsc);
+  }, [zoomed]);
+
+  return (
+    <div>
+      <div className={`arch-img-wrapper${zoomed ? " zoomed" : ""}`}
+        onClick={() => setZoomed(!zoomed)} role="button" tabIndex={0}
+        aria-label={zoomed ? "Click to close" : "Click to zoom architecture diagram"}
+        onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") setZoomed(!zoomed); }}>
+        <img src="/assets/img/dualstgf-architecture-p0.png"
+          alt="DualSTGF full architecture diagram"
+          style={{ width: "100%", display: "block", padding: zoomed ? 0 : 16 }} />
+      </div>
+      <p style={{ color: MUTED, fontSize: 12, marginTop: 10, textAlign: "center" }}>
+        Click the diagram to zoom &middot; Press Escape to close
+      </p>
+      <div style={{ marginTop: 24, display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: 12 }}>
+        {[
+          { icon: "\u23F1", title: "Temporal Branch", desc: "1DCNN filters noise, Node GRU encodes per-sensor dynamics with OC context, GATv2 + EdgeGRU builds a dynamic dependency graph (A_temp).", color: GOLD },
+          { icon: "\u301C", title: "Spectral Branch", desc: "rFFT extracts frequency-domain magnitudes, Band Mixer creates spectral embeddings with OC context, single-shot GATv2 builds A_freq.", color: BLUE },
+          { icon: "\u2696", title: "JS Divergence", desc: "Jensen-Shannon divergence measures structural disagreement between A_temp and A_freq. Low during normal operation, spikes during faults.", color: GREEN },
+          { icon: "\u2699", title: "Gated Fusion", desc: "Learned sigmoid gate adaptively combines temporal and spectral GNN embeddings: z_fused = g \u2299 z_temp + (1-g) \u2299 z_freq.", color: PURPLE },
+          { icon: "\u21A9", title: "Reverse GRU Decoder", desc: "Reconstructs the input window in reverse temporal order from fused embeddings. Reconstruction error forms the base anomaly signal.", color: "#F9A8D4" },
+          { icon: "\u26A0", title: "Fused Anomaly Score", desc: "Combines topology-aware reconstruction error with z-scored JS divergence: s = s_topo + \u03B2 \u00B7 z_div.", color: RED },
+        ].map((c) => (
+          <div key={c.title} style={{ background: CARD, border: `1px solid ${BORDER}`, borderRadius: 10, padding: 20 }}>
+            <div style={{ fontSize: 22, marginBottom: 8 }}>{c.icon}</div>
+            <div style={{ color: c.color, fontWeight: 700, fontSize: 14, marginBottom: 6 }}>{c.title}</div>
+            <div style={{ color: TEXT, fontSize: 13, lineHeight: 1.6 }}>{c.desc}</div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function DualViewDemo() {
+  const [mode, setMode] = useState("normal");
+  const normalData = [
+    { sensor: "S1\u2192S2", temp: 0.85, spec: 0.82 },
+    { sensor: "S1\u2192S3", temp: 0.72, spec: 0.70 },
+    { sensor: "S2\u2192S3", temp: 0.90, spec: 0.88 },
+    { sensor: "S2\u2192S4", temp: 0.65, spec: 0.63 },
+    { sensor: "S3\u2192S4", temp: 0.78, spec: 0.75 },
+  ];
+  const faultData = [
+    { sensor: "S1\u2192S2", temp: 0.83, spec: 0.40 },
+    { sensor: "S1\u2192S3", temp: 0.70, spec: 0.25 },
+    { sensor: "S2\u2192S3", temp: 0.88, spec: 0.92 },
+    { sensor: "S2\u2192S4", temp: 0.63, spec: 0.80 },
+    { sensor: "S3\u2192S4", temp: 0.76, spec: 0.30 },
+  ];
+  const data = mode === "normal" ? normalData : faultData;
+  const jsDiv = mode === "normal" ? 0.012 : 0.341;
+
+  const ModeBtn = ({ k, label, color }) => (
+    <button onClick={() => setMode(k)} style={{
+      background: mode === k ? color + "20" : CARD,
+      border: `1px solid ${mode === k ? color : BORDER}`,
+      borderRadius: 8, padding: "10px 20px",
+      color: mode === k ? color : TEXT,
+      fontSize: 13, fontWeight: 600, transition: "all 0.2s",
+    }}>{label}</button>
+  );
+
+  return (
+    <div>
+      <div style={{ display: "flex", gap: 8, marginBottom: 20 }}>
+        <ModeBtn k="normal" label="Normal Operation" color={GREEN} />
+        <ModeBtn k="fault" label="Incipient Fault" color={RED} />
+      </div>
+      <div style={{ display: "flex", gap: 20, flexWrap: "wrap" }}>
+        <div style={{ flex: "1 1 360px", minWidth: 280, background: CARD, border: `1px solid ${BORDER}`, borderRadius: 10, padding: "16px 12px" }}>
+          <div style={{ color: MUTED, fontSize: 11, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 12, paddingLeft: 8 }}>
+            Edge Weights: Temporal vs Spectral
+          </div>
+          <ResponsiveContainer width="100%" height={220}>
+            <BarChart data={data} margin={{ left: 0, right: 8 }}>
+              <XAxis dataKey="sensor" tick={{ fill: MUTED, fontSize: 10 }} axisLine={{ stroke: BORDER }} tickLine={false} />
+              <YAxis domain={[0, 1]} tick={{ fill: MUTED, fontSize: 10 }} axisLine={false} tickLine={false} />
+              <Tooltip contentStyle={{ background: "#1a1d26", border: `1px solid ${BORDER}`, borderRadius: 6, fontSize: 12 }} itemStyle={{ color: TEXT }} />
+              <Bar dataKey="temp" name="Temporal" fill={GOLD} radius={[3, 3, 0, 0]} barSize={16} />
+              <Bar dataKey="spec" name="Spectral" fill={BLUE} radius={[3, 3, 0, 0]} barSize={16} />
+              <Legend wrapperStyle={{ fontSize: 11, color: TEXT }} />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+        <div style={{ flex: "0 1 200px", display: "flex", flexDirection: "column", gap: 12, justifyContent: "center" }}>
+          <div style={{
+            background: mode === "normal" ? GREEN + "10" : RED + "15",
+            border: `1px solid ${mode === "normal" ? GREEN + "40" : RED + "50"}`,
+            borderRadius: 10, padding: 24, textAlign: "center", transition: "all 0.4s ease",
+          }}>
+            <div style={{ color: MUTED, fontSize: 10, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 8 }}>JS Divergence</div>
+            <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 36, fontWeight: 800, color: mode === "normal" ? GREEN : RED, transition: "all 0.4s ease" }}>
+              {jsDiv.toFixed(3)}
+            </div>
+            <div style={{ color: mode === "normal" ? GREEN : RED, fontSize: 12, marginTop: 6, fontWeight: 600 }}>
+              {mode === "normal" ? "\u2713 Views agree" : "\u26A0 Structural disagreement!"}
+            </div>
+          </div>
+          <div style={{ color: MUTED, fontSize: 12, lineHeight: 1.6, padding: "0 4px" }}>
+            {mode === "normal"
+              ? "Under normal conditions, temporal and spectral graphs infer similar dependency structures."
+              : "An incipient fault disrupts spectral relationships while temporal patterns appear nearly unchanged."}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ResultsSection() {
+  const [dataset, setDataset] = useState("pronto");
+  const prontoData = [
+    { method: "GDN", AUC: 0.52, F1: 0.78, type: "graph" },
+    { method: "GRELEN", AUC: 0.47, F1: 0.77, type: "graph" },
+    { method: "MTADGAT", AUC: 0.72, F1: 0.82, type: "graph" },
+    { method: "DyEdgeGAT", AUC: 0.80, F1: 0.86, type: "graph" },
+    { method: "LSTM", AUC: 0.60, F1: 0.80, type: "dyn" },
+    { method: "USAD", AUC: 0.65, F1: 0.80, type: "dyn" },
+    { method: "AE", AUC: 0.73, F1: 0.83, type: "rel" },
+    { method: "FNN", AUC: 0.74, F1: 0.82, type: "rel" },
+    { method: "DualSTGF", AUC: 0.87, F1: 0.98, type: "ours" },
+  ].sort((a, b) => a.AUC - b.AUC);
+  const ashraeData = [
+    { method: "GDN", AUC: 0.611, F1: 0.970, type: "graph" },
+    { method: "GRELEN", AUC: 0.850, F1: 0.973, type: "graph" },
+    { method: "MTADGAT", AUC: 0.874, F1: 0.977, type: "graph" },
+    { method: "DyEdgeGAT", AUC: 0.776, F1: 0.968, type: "graph" },
+    { method: "LSTM", AUC: 0.951, F1: 0.980, type: "dyn" },
+    { method: "USAD", AUC: 0.815, F1: 0.972, type: "dyn" },
+    { method: "AE", AUC: 0.919, F1: 0.972, type: "rel" },
+    { method: "FNN", AUC: 0.920, F1: 0.977, type: "rel" },
+    { method: "DualSTGF", AUC: 0.982, F1: 0.998, type: "ours" },
+  ].sort((a, b) => a.AUC - b.AUC);
+  const data = dataset === "pronto" ? prontoData : ashraeData;
+  const getColor = (type) => type === "ours" ? GREEN : type === "graph" ? BLUE : type === "dyn" ? GOLD : MUTED;
+  const CustomTooltip = ({ active, payload }) => {
+    if (!active || !payload?.length) return null;
+    const d = payload[0].payload;
+    return (
+      <div style={{ background: "#1a1d26", border: `1px solid ${BORDER}`, borderRadius: 6, padding: "10px 14px", fontSize: 12 }}>
+        <div style={{ color: "#fff", fontWeight: 700, marginBottom: 4 }}>{d.method}</div>
+        <div style={{ color: TEXT }}>AUC: {d.AUC.toFixed(3)}</div>
+        <div style={{ color: TEXT }}>Best F1: {d.F1.toFixed(3)}</div>
+      </div>
+    );
+  };
+
+  return (
+    <div>
+      <div style={{ display: "flex", gap: 8, marginBottom: 24 }}>
+        {[{ key: "pronto", label: "PRONTO", sub: "Multiphase Flow" }, { key: "ashrae", label: "ASHRAE", sub: "HVAC Chiller" }].map((d) => (
+          <button key={d.key} onClick={() => setDataset(d.key)} style={{
+            background: dataset === d.key ? GOLD + "20" : CARD, border: `1px solid ${dataset === d.key ? GOLD : BORDER}`,
+            borderRadius: 8, padding: "10px 20px", color: dataset === d.key ? GOLD : TEXT, fontSize: 13, fontWeight: 600, transition: "all 0.2s",
+          }}>{d.label} <span style={{ color: MUTED, fontSize: 11, display: "block" }}>{d.sub}</span></button>
+        ))}
+      </div>
+      <div style={{ display: "flex", gap: 20, flexWrap: "wrap" }}>
+        <div style={{ flex: "1 1 400px", minWidth: 300, background: CARD, border: `1px solid ${BORDER}`, borderRadius: 10, padding: "20px 12px 12px" }}>
+          <div style={{ color: MUTED, fontSize: 11, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 12, paddingLeft: 12 }}>AUC-ROC Comparison</div>
+          <ResponsiveContainer width="100%" height={320}>
+            <BarChart data={data} layout="vertical" margin={{ left: 8, right: 20, top: 4, bottom: 4 }}>
+              <XAxis type="number" domain={[0.4, 1]} tick={{ fill: MUTED, fontSize: 10 }} axisLine={{ stroke: BORDER }} tickLine={false} />
+              <YAxis type="category" dataKey="method" tick={{ fill: TEXT, fontSize: 11, fontFamily: "'JetBrains Mono', monospace" }} axisLine={false} tickLine={false} width={90} />
+              <Tooltip content={<CustomTooltip />} cursor={{ fill: "#ffffff08" }} />
+              <Bar dataKey="AUC" radius={[0, 4, 4, 0]} barSize={22}>
+                {data.map((entry, i) => <Cell key={i} fill={getColor(entry.type)} fillOpacity={entry.type === "ours" ? 1 : 0.6} />)}
+              </Bar>
+            </BarChart>
+          </ResponsiveContainer>
+          <div style={{ display: "flex", gap: 16, justifyContent: "center", marginTop: 8, flexWrap: "wrap" }}>
+            {[{ color: GREEN, label: "DualSTGF (Ours)" }, { color: BLUE, label: "Graph-based" }, { color: GOLD, label: "Dynamics-based" }, { color: MUTED, label: "Relationship-based" }].map((l) => (
+              <span key={l.label} style={{ fontSize: 10, color: TEXT, display: "flex", alignItems: "center", gap: 5 }}>
+                <span style={{ width: 10, height: 10, borderRadius: 2, background: l.color, display: "inline-block" }} />{l.label}
+              </span>
+            ))}
+          </div>
+        </div>
+        <div style={{ flex: "0 1 240px", display: "flex", flexDirection: "column", gap: 12 }}>
+          <div style={{ background: CARD, border: `1px solid ${BORDER}`, borderRadius: 10, padding: 20, textAlign: "center" }}>
+            <div style={{ color: MUTED, fontSize: 10, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 8 }}>Best AUC</div>
+            <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 36, fontWeight: 800, color: GREEN }}>{dataset === "pronto" ? "0.87" : "0.982"}</div>
+            <div style={{ color: GREEN, fontSize: 12, marginTop: 4 }}>+{dataset === "pronto" ? "7" : "3.1"} pp vs best baseline</div>
+          </div>
+          <div style={{ background: CARD, border: `1px solid ${BORDER}`, borderRadius: 10, padding: 20, textAlign: "center" }}>
+            <div style={{ color: MUTED, fontSize: 10, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 8 }}>Best F1</div>
+            <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 36, fontWeight: 800, color: GOLD }}>{dataset === "pronto" ? "0.98" : "0.998"}</div>
+          </div>
+          <div style={{ background: CARD, border: `1px solid ${BORDER}`, borderRadius: 10, padding: 20, textAlign: "center" }}>
+            <div style={{ color: MUTED, fontSize: 10, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 8 }}>Sensors / Faults</div>
+            <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 24, fontWeight: 700, color: "#fff" }}>{dataset === "pronto" ? "11 / 4" : "46 / 7"}</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function AblationSection() {
+  const [ds, setDs] = useState("pronto");
+  const prontoAbl = [
+    { config: "Full Model", AUC: 0.871, delta: 0 },
+    { config: "w/o Temporal", AUC: 0.770, delta: -0.101 },
+    { config: "w/o Spectral", AUC: 0.745, delta: -0.126 },
+    { config: "w/o Divergence", AUC: 0.625, delta: -0.246 },
+    { config: "w/o Div. Loss", AUC: 0.756, delta: -0.115 },
+    { config: "w/o Div. Fusion", AUC: 0.759, delta: -0.112 },
+    { config: "JS \u2192 KL", AUC: 0.751, delta: -0.120 },
+    { config: "Gated \u2192 Concat", AUC: 0.611, delta: -0.260 },
+  ];
+  const ashraeAbl = [
+    { config: "Full Model", AUC: 0.982, delta: 0 },
+    { config: "w/o Temporal", AUC: 0.975, delta: -0.007 },
+    { config: "w/o Spectral", AUC: 0.980, delta: -0.001 },
+    { config: "w/o Divergence", AUC: 0.940, delta: -0.042 },
+    { config: "w/o Div. Loss", AUC: 0.975, delta: -0.007 },
+    { config: "w/o Div. Fusion", AUC: 0.977, delta: -0.005 },
+    { config: "JS \u2192 KL", AUC: 0.965, delta: -0.017 },
+    { config: "Gated \u2192 Sum", AUC: 0.980, delta: -0.002 },
+  ];
+  const data = ds === "pronto" ? prontoAbl : ashraeAbl;
+
+  return (
+    <div>
+      <div style={{ display: "flex", gap: 8, marginBottom: 24 }}>
+        {["pronto", "ashrae"].map((k) => (
+          <button key={k} onClick={() => setDs(k)} style={{
+            background: ds === k ? BLUE + "20" : CARD, border: `1px solid ${ds === k ? BLUE : BORDER}`,
+            borderRadius: 8, padding: "8px 18px", color: ds === k ? BLUE : TEXT, fontSize: 13, fontWeight: 600, transition: "all 0.2s",
+          }}>{k === "pronto" ? "PRONTO" : "ASHRAE"}</button>
+        ))}
+      </div>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: 12 }}>
+        {data.map((d) => (
+          <div key={d.config} style={{
+            background: d.delta === 0 ? GREEN + "10" : CARD, border: `1px solid ${d.delta === 0 ? GREEN + "40" : BORDER}`,
+            borderRadius: 10, padding: "16px 18px", transition: "all 0.2s",
+          }}>
+            <div style={{ fontSize: 12, color: d.delta === 0 ? GREEN : TEXT, fontWeight: 600, marginBottom: 8 }}>{d.config}</div>
+            <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 22, fontWeight: 800, color: d.delta === 0 ? GREEN : "#fff" }}>{d.AUC.toFixed(3)}</div>
+            {d.delta !== 0 && <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 12, color: RED, marginTop: 4 }}>{d.delta.toFixed(3)} AUC</div>}
+          </div>
+        ))}
+      </div>
+      <div style={{ marginTop: 20, background: CARD, border: `1px solid ${BORDER}`, borderRadius: 10, padding: 20 }}>
+        <div style={{ color: "#fff", fontWeight: 700, fontSize: 14, marginBottom: 8 }}>Key Takeaway</div>
+        <p style={{ color: TEXT, fontSize: 14, lineHeight: 1.7, margin: 0 }}>
+          {ds === "pronto"
+            ? "On PRONTO, removing the divergence mechanism causes the largest drop (\u22120.246 AUC). Replacing gated fusion with concatenation (\u22120.260) is similarly devastating, confirming adaptive view weighting is critical."
+            : "On ASHRAE, the divergence mechanism again causes the largest drop (\u22120.042 AUC). Both branches and their divergence remain necessary for peak performance."}
+        </p>
+      </div>
+    </div>
+  );
+}
+
+// ─── FULL DUALSTGF PAGE ───
+function DualSTGFProject() {
+  return (
+    <div>
+      {/* Overview */}
+      <section style={{ paddingTop: 64, paddingBottom: 48 }}>
+        <FadeIn>
+          <div style={{ display: "flex", gap: 8, marginBottom: 20, flexWrap: "wrap" }}>
+            <Tag color={GOLD}>Information Fusion</Tag>
+            <Tag color={BLUE}>Graph Neural Networks</Tag>
+            <Tag color={GREEN}>Fault Detection</Tag>
+          </div>
+          <h1 style={{ fontFamily: "'Playfair Display', Georgia, serif", fontSize: "clamp(32px, 5vw, 56px)", fontWeight: 900, color: "#fff", lineHeight: 1.1, margin: "0 0 16px" }}>DualSTGF</h1>
+          <p style={{ fontSize: "clamp(16px, 2.2vw, 20px)", color: TEXT, lineHeight: 1.5, maxWidth: 700, margin: "0 0 8px" }}>
+            Dual-View Spectral-Temporal Graph Fusion with Adaptive Edge Learning and Divergence Scoring for Incipient Fault Detection
+          </p>
+          <p style={{ color: MUTED, fontSize: 14, margin: "0 0 32px" }}>Rashinda Wijethunga, Ayan Sadhu, Jagath Samarabandu &mdash; Western University</p>
+        </FadeIn>
+        <div style={{ display: "flex", gap: 14, flexWrap: "wrap" }}>
+          <StatCard value="0.87" label="PRONTO AUC" color={GOLD} delay={0.1} />
+          <StatCard value="0.982" label="ASHRAE AUC" color={BLUE} delay={0.2} />
+          <StatCard value="0.98" label="Best F1" color={GREEN} delay={0.3} />
+          <StatCard value="9" label="Baselines beaten" color={PURPLE} delay={0.4} />
+        </div>
+      </section>
+
+      <Divider />
+
+      {/* Problem */}
+      <section style={{ paddingBottom: 56 }}>
+        <FadeIn><SectionTitle tag="Motivation" tagColor={RED} title="Why existing methods fail" subtitle="Current graph-based anomaly detection has two blind spots that DualSTGF addresses." /></FadeIn>
+        <CardGrid>
+          <FadeIn delay={0.1}><InfoCard icon={"\uD83D\uDD12"} title="Single-Domain Representation" desc="All existing graph-based methods operate exclusively in the time domain. They miss frequency-domain signatures like altered refrigerant flow periodicity or shifted spectral energy." /></FadeIn>
+          <FadeIn delay={0.2}><InfoCard icon={"\uD83D\uDCCA"} title="Single-View Graph Topology" desc="With only one dependency graph, there is no way to detect structural disagreement where inter-sensor relationships look normal in one view but anomalous in another." /></FadeIn>
+        </CardGrid>
+      </section>
+
+      <Divider />
+
+      {/* Innovation */}
+      <section style={{ paddingBottom: 56 }}>
+        <FadeIn><SectionTitle tag="Core Idea" tagColor={GREEN} title="Two views, one truth signal" subtitle="DualSTGF learns separate dependency graphs from time-domain and frequency-domain representations, then measures whether they agree." /></FadeIn>
+        <FadeIn delay={0.15}><DualViewDemo /></FadeIn>
+      </section>
+
+      <Divider />
+
+      {/* Architecture */}
+      <section style={{ paddingBottom: 56 }}>
+        <FadeIn><SectionTitle tag="Architecture" tagColor={GOLD} title="How DualSTGF works" subtitle="The full pipeline from raw sensor data to anomaly score. Click the diagram to zoom." /></FadeIn>
+        <FadeIn delay={0.1}><DualSTGFArchitectureImage /></FadeIn>
+      </section>
+
+      <Divider />
+
+      {/* Results */}
+      <section style={{ paddingBottom: 56 }}>
+        <FadeIn><SectionTitle tag="Experiments" tagColor={BLUE} title="Results across two benchmarks" subtitle="DualSTGF surpasses nine baselines on both PRONTO and ASHRAE datasets." /></FadeIn>
+        <FadeIn delay={0.1}><ResultsSection /></FadeIn>
+      </section>
+
+      <Divider />
+
+      {/* Ablation */}
+      <section style={{ paddingBottom: 56 }}>
+        <FadeIn><SectionTitle tag="Analysis" tagColor={PURPLE} title="What matters most?" subtitle="Ablation studies reveal the divergence mechanism as the single most important component." /></FadeIn>
+        <FadeIn delay={0.1}><AblationSection /></FadeIn>
+      </section>
+
+      <div style={{ borderTop: `1px solid ${BORDER}`, padding: "24px 0", textAlign: "center", color: MUTED, fontSize: 12 }}>
+        DualSTGF &mdash; Submitted to Information Fusion (Elsevier)
+      </div>
+    </div>
+  );
+}
+
+// ══════════════════════════════════════════════
+// ─── ULMA COMPONENTS ───
+// ══════════════════════════════════════════════
+
+function ULMAArchSVG() {
+  return (
+    <div className="ulma-arch">
+      <svg viewBox="0 0 940 480" width="100%" style={{ maxWidth: 940 }} xmlns="http://www.w3.org/2000/svg" fontFamily="'Outfit','Segoe UI',sans-serif">
+        <defs>
+          <marker id="arr" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6Z" fill="#444"/></marker>
+          <marker id="arra2a" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6Z" fill="#888"/></marker>
+        </defs>
+        {/* Legend */}
+        <g transform="translate(20,20)">
+          <circle cx="10" cy="10" r="6" fill="#5A6A8A"/><circle cx="10" cy="4" r="3.5" fill="#5A6A8A"/>
+          <text x="24" y="14" fontSize="11" fill="#555">User</text>
+          <rect x="2" y="28" width="16" height="13" rx="2" fill="#FFF" stroke="#CDA02E" strokeWidth="1.5"/><circle cx="16" cy="30" r="4" fill="#FBBF24"/>
+          <text x="24" y="40" fontSize="11" fill="#555">LLM Agent</text>
+        </g>
+        {/* User */}
+        <g transform="translate(440,18)"><circle cx="0" cy="0" r="12" fill="#5A6A8A"/><circle cx="0" cy="-8" r="7" fill="#5A6A8A"/></g>
+        <line x1="440" y1="32" x2="440" y2="58" stroke="#444" strokeWidth="1.5" markerEnd="url(#arr)"/>
+        {/* Front */}
+        <rect x="360" y="62" width="160" height="52" rx="6" fill="#FFF" stroke="#333" strokeWidth="1.5"/>
+        <circle cx="505" cy="70" r="6" fill="#FBBF24"/>
+        <text x="440" y="93" textAnchor="middle" fontSize="15" fontWeight="600" fill="#222">Front</text>
+        <line x1="440" y1="114" x2="440" y2="165" stroke="#444" strokeWidth="1.5" markerEnd="url(#arr)"/>
+        {/* Supervisor */}
+        <rect x="340" y="168" width="200" height="56" rx="6" fill="#FFF" stroke="#333" strokeWidth="1.5"/>
+        <circle cx="522" cy="178" r="6" fill="#FBBF24"/>
+        <text x="440" y="202" textAnchor="middle" fontSize="15" fontWeight="600" fill="#222">Supervisor</text>
+        {/* A2A */}
+        <line x1="540" y1="196" x2="720" y2="196" stroke="#888" strokeWidth="1.5" strokeDasharray="8 4" markerEnd="url(#arra2a)"/>
+        <text x="630" y="188" textAnchor="middle" fontSize="11" fill="#888" fontWeight="500">A2A</text>
+        <rect x="728" y="168" width="170" height="56" rx="6" fill="#FFF" stroke="#333" strokeWidth="1.5"/>
+        <text x="813" y="202" textAnchor="middle" fontSize="14" fontWeight="600" fill="#222">Remote Branch</text>
+        {/* Tree */}
+        <line x1="440" y1="224" x2="440" y2="260" stroke="#444" strokeWidth="1.5"/>
+        <line x1="110" y1="260" x2="770" y2="260" stroke="#444" strokeWidth="1.5"/>
+        <line x1="110" y1="260" x2="110" y2="295" stroke="#444" strokeWidth="1.5" markerEnd="url(#arr)"/>
+        <line x1="330" y1="260" x2="330" y2="295" stroke="#444" strokeWidth="1.5" markerEnd="url(#arr)"/>
+        <line x1="550" y1="260" x2="550" y2="295" stroke="#444" strokeWidth="1.5" markerEnd="url(#arr)"/>
+        <line x1="770" y1="260" x2="770" y2="295" stroke="#444" strokeWidth="1.5" markerEnd="url(#arr)"/>
+        {/* Sub-agents */}
+        <rect x="38" y="300" width="144" height="52" rx="6" fill="#FFF" stroke="#333" strokeWidth="1.5"/>
+        <text x="110" y="331" textAnchor="middle" fontSize="14" fontWeight="600" fill="#222">Local DB</text>
+        <line x1="110" y1="352" x2="110" y2="385" stroke="#444" strokeWidth="1.5" markerEnd="url(#arr)"/>
+        <ellipse cx="110" cy="393" rx="40" ry="10" fill="#FFF" stroke="#666" strokeWidth="1.2"/>
+        <rect x="70" y="393" width="80" height="26" fill="#FFF" stroke="none"/>
+        <line x1="70" y1="393" x2="70" y2="419" stroke="#666" strokeWidth="1.2"/>
+        <line x1="150" y1="393" x2="150" y2="419" stroke="#666" strokeWidth="1.2"/>
+        <ellipse cx="110" cy="419" rx="40" ry="10" fill="#FFF" stroke="#666" strokeWidth="1.2"/>
+        <text x="110" y="444" textAnchor="middle" fontSize="12" fontWeight="500" fill="#555">SQLite</text>
+
+        <rect x="258" y="300" width="144" height="52" rx="6" fill="#FFF" stroke="#333" strokeWidth="1.5"/>
+        <circle cx="388" cy="308" r="6" fill="#FBBF24"/>
+        <text x="330" y="326" textAnchor="middle" fontSize="14" fontWeight="600" fill="#222">Identity</text>
+        <line x1="330" y1="352" x2="330" y2="385" stroke="#444" strokeWidth="1.5" markerEnd="url(#arr)"/>
+        <text x="348" y="375" fontSize="10" fill="#888" fontWeight="500">MCP</text>
+        <rect x="290" y="390" width="80" height="40" rx="6" fill="#EBF5FF" stroke="#0078D4" strokeWidth="1.2"/>
+        <text x="330" y="408" textAnchor="middle" fontSize="10" fill="#0078D4" fontWeight="600">Microsoft</text>
+        <text x="330" y="422" textAnchor="middle" fontSize="11" fill="#0078D4" fontWeight="700">Entra ID</text>
+
+        <rect x="478" y="300" width="144" height="52" rx="6" fill="#FFF" stroke="#333" strokeWidth="1.5"/>
+        <circle cx="608" cy="308" r="6" fill="#FBBF24"/>
+        <text x="550" y="326" textAnchor="middle" fontSize="14" fontWeight="600" fill="#222">Teams</text>
+
+        <rect x="698" y="300" width="144" height="52" rx="6" fill="#FFF" stroke="#333" strokeWidth="1.5"/>
+        <circle cx="828" cy="308" r="6" fill="#FBBF24"/>
+        <text x="770" y="326" textAnchor="middle" fontSize="14" fontWeight="600" fill="#222">Policy</text>
+        <line x1="770" y1="352" x2="770" y2="385" stroke="#444" strokeWidth="1.5" markerEnd="url(#arr)"/>
+        <rect x="748" y="390" width="44" height="36" rx="2" fill="#FFF" stroke="#888" strokeWidth="1"/>
+        <line x1="753" y1="400" x2="783" y2="400" stroke="#CCC" strokeWidth="1"/>
+        <line x1="753" y1="406" x2="783" y2="406" stroke="#CCC" strokeWidth="1"/>
+        <line x1="753" y1="412" x2="773" y2="412" stroke="#CCC" strokeWidth="1"/>
+        <text x="770" y="444" textAnchor="middle" fontSize="11" fontWeight="500" fill="#555">Policy Docs</text>
+      </svg>
+    </div>
+  );
+}
+
+function AgentCard({ name, model, desc, accentColor }) {
+  return (
+    <div style={{
+      background: CARD, border: `1px solid ${BORDER}`, borderRadius: 10,
+      padding: "22px 20px", position: "relative", overflow: "hidden",
+      transition: "border-color 0.3s", borderTop: `3px solid ${accentColor}`,
+    }}>
+      <div style={{ fontFamily: "'JetBrains Mono', 'IBM Plex Mono', monospace", fontSize: 14, fontWeight: 600, color: accentColor, marginBottom: 6 }}>{name}</div>
+      <div style={{ fontSize: 11, color: MUTED, fontFamily: "'JetBrains Mono', monospace", marginBottom: 10 }}>{model}</div>
+      <p style={{ fontSize: 13, lineHeight: 1.6, color: TEXT, margin: 0 }}>{desc}</p>
+    </div>
+  );
+}
+
+function StackItem({ cat, name, desc }) {
+  return (
+    <div style={{ background: CARD, border: `1px solid ${BORDER}`, borderRadius: 10, padding: "20px 18px", transition: "border-color 0.3s" }}>
+      <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: MUTED, marginBottom: 6 }}>{cat}</div>
+      <div style={{ fontSize: 15, fontWeight: 600, color: "#fff", marginBottom: 4 }}>{name}</div>
+      <div style={{ fontSize: 12, color: TEXT, lineHeight: 1.5 }}>{desc}</div>
+    </div>
+  );
+}
+
+// ─── FULL ULMA PAGE ───
+function ULMAProject() {
+  return (
+    <div>
+      {/* Hero */}
+      <section style={{ paddingTop: 64, paddingBottom: 48, textAlign: "center" }}>
+        <FadeIn>
+          <div style={{ display: "flex", gap: 8, justifyContent: "center", flexWrap: "wrap", marginBottom: 20 }}>
+            <Tag color={CYAN}>Google ADK</Tag>
+            <Tag color={GREEN}>Multi-Agent</Tag>
+            <Tag color={AMBER}>Microsoft Entra ID</Tag>
+            <Tag color={PURPLE}>A2A Protocol</Tag>
+          </div>
+          <p style={{ fontSize: 13, fontFamily: "'JetBrains Mono', monospace", color: MUTED, letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 10 }}>User Lifecycle Management Agent</p>
+          <h1 style={{
+            fontFamily: "'Playfair Display', 'DM Serif Display', Georgia, serif",
+            fontSize: "clamp(42px, 7vw, 72px)", color: "#fff", lineHeight: 1.05, letterSpacing: "-0.02em", marginBottom: 20,
+          }}>
+            <span style={{ background: "linear-gradient(135deg, #38BDF8 0%, #818CF8 100%)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>ULMA</span>
+          </h1>
+          <p style={{ fontSize: 18, color: TEXT, maxWidth: 640, margin: "0 auto 36px", lineHeight: 1.7, fontWeight: 300 }}>
+            An intelligent multi-agent system that automates the entire user lifecycle, from onboarding to offboarding, using LLM agents orchestrated through Google ADK with real Active Directory integration.
+          </p>
+          <div style={{ display: "flex", gap: 12, justifyContent: "center", flexWrap: "wrap" }}>
+            <a href="#ulma-demo" onClick={(e) => { e.preventDefault(); document.getElementById("ulma-demo")?.scrollIntoView({ behavior: "smooth" }); }}
+              style={{ display: "inline-flex", alignItems: "center", gap: 8, padding: "12px 28px", borderRadius: 8, fontSize: 14, fontWeight: 600, background: CYAN, color: "#0A0E17", textDecoration: "none", transition: "all 0.25s" }}>
+              Watch Demo
+            </a>
+            <a href="https://github.com/VinuraD/ULMA" target="_blank" rel="noopener"
+              style={{ display: "inline-flex", alignItems: "center", gap: 8, padding: "12px 28px", borderRadius: 8, fontSize: 14, fontWeight: 600, background: "transparent", color: TEXT, border: `1px solid #2A3A5C`, textDecoration: "none", transition: "all 0.25s" }}>
+              GitHub
+            </a>
+          </div>
+        </FadeIn>
+      </section>
+
+      {/* Stats */}
+      <div style={{ display: "flex", gap: 14, flexWrap: "wrap", marginBottom: 56 }}>
+        <StatCard value="5" label="LLM Agents" color={CYAN} delay={0.05} />
+        <StatCard value="3" label="Gemini Models" color={AMBER} delay={0.1} />
+        <StatCard value="A2A" label="Cross-Branch Protocol" color={GREEN} delay={0.15} />
+        <StatCard value="MCP" label="Tool Integration" color={PURPLE} delay={0.2} />
+        <StatCard value="Real" label="Entra ID Instance" color="#00A4EF" delay={0.25} />
+      </div>
+
+      <Divider />
+
+      {/* Demo */}
+      <section id="ulma-demo" style={{ paddingBottom: 56 }}>
+        <FadeIn><SectionTitle tag="Live Demo" tagColor={CYAN} title="See ULMA in action" subtitle="Routine onboarding, secure offboarding, and cross-branch A2A communication, all orchestrated by intelligent agents." /></FadeIn>
+        <FadeIn delay={0.1}>
+          <div className="video-wrap">
+            <iframe src="https://www.youtube.com/embed/o5TcobmnShM" title="ULMA Demo"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowFullScreen />
+          </div>
+        </FadeIn>
+      </section>
+
+      <Divider />
+
+      {/* Motivation */}
+      <section style={{ paddingBottom: 56 }}>
+        <FadeIn><SectionTitle tag="Motivation" tagColor={AMBER} title="Why agent-driven ULM?" subtitle="Traditional manual ULM processes create bottlenecks and security risks at scale." /></FadeIn>
+        <CardGrid>
+          <FadeIn delay={0.1}><InfoCard icon={"\uD83D\uDD13"} title="Identity Security Crisis" desc="78% of organizations have faced identity-related security incidents, with data breaches averaging $4.88M in cost. Manual access management is a root cause." /></FadeIn>
+          <FadeIn delay={0.2}><InfoCard icon={"\u2699\uFE0F"} title="Operational Bottleneck" desc="Enterprises with thousands of users, global teams, and complex access structures face severe delays from repetitive manual provisioning and deprovisioning." /></FadeIn>
+          <FadeIn delay={0.3}><InfoCard icon={"\uD83E\uDD16"} title="Agents as the Solution" desc="LLM agents interpret natural-language instructions, extract requirements, build structured work plans, and autonomously interact with enterprise systems while ensuring policy compliance." /></FadeIn>
+        </CardGrid>
+      </section>
+
+      <Divider />
+
+      {/* Architecture */}
+      <section style={{ paddingBottom: 56 }}>
+        <FadeIn><SectionTitle tag="Architecture" tagColor={GREEN} title="Multi-agent coordinator pattern" subtitle="A hierarchical multi-agent system where a supervisor orchestrates specialized sub-agents with shared context." /></FadeIn>
+        <FadeIn delay={0.1}>
+          <ULMAArchSVG />
+          <p style={{ color: MUTED, fontSize: 12, textAlign: "center", marginTop: 14, lineHeight: 1.6 }}>
+            <strong style={{ color: TEXT }}>Fig. 1:</strong> ULMA multi-agent architecture. The <strong style={{ color: TEXT }}>Front Agent</strong> parses user requests, the <strong style={{ color: TEXT }}>Supervisor</strong> orchestrates sub-agents (Identity, Teams, Policy), and the <strong style={{ color: TEXT }}>Remote Branch</strong> communicates over A2A.
+          </p>
+        </FadeIn>
+      </section>
+
+      <Divider />
+
+      {/* Agents */}
+      <section style={{ paddingBottom: 56 }}>
+        <FadeIn><SectionTitle tag="Agents" tagColor={PURPLE} title="Meet the agents" subtitle="Each agent has a specialized role, powered by the appropriate Gemini model for its complexity." /></FadeIn>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: 14 }}>
+          <FadeIn delay={0.05}><AgentCard name="front_agent" model="gemini-2.5-flash-lite" desc="Interacts with the human user, parses natural-language ULM requests, and forwards structured tasks to the Supervisor." accentColor={CYAN} /></FadeIn>
+          <FadeIn delay={0.1}><AgentCard name="supervisor_agent" model="gemini-2.5-pro" desc="The orchestrator. Formulates plans, dispatches sub-agents, monitors shared context, manages approvals via long-running operations." accentColor={AMBER} /></FadeIn>
+          <FadeIn delay={0.15}><AgentCard name="identity_agent" model="gemini-2.5-flash" desc="Connects to Microsoft Entra ID via MCP server and Microsoft Graph API. Handles user creation, application access, and all AD-related operations." accentColor="#00A4EF" /></FadeIn>
+          <FadeIn delay={0.2}><AgentCard name="policy_agent" model="gemini-2.5-flash" desc="Reads organizational policy documents (PDFs), extracts relevant constraints, and ensures all actions comply with security standards." accentColor={GREEN} /></FadeIn>
+          <FadeIn delay={0.25}><AgentCard name="teams_agent" model="gemini-2.5-flash-lite" desc="Posts progress updates and obtains human approvals. In this demo, Teams is simulated via local text files representing messages." accentColor={PURPLE} /></FadeIn>
+          <FadeIn delay={0.3}><AgentCard name="remote_agent" model="A2A Protocol" desc="Facilitates cross-branch communication. A mock remote agent runs on localhost, simulating a branch office with its own simplified AD." accentColor={RED} /></FadeIn>
+        </div>
+      </section>
+
+      <Divider />
+
+      {/* Tech Stack */}
+      <section style={{ paddingBottom: 56 }}>
+        <FadeIn><SectionTitle tag="Stack" tagColor={CYAN} title="Technical foundation" subtitle="Built entirely on Google ADK with real enterprise integrations." /></FadeIn>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 12 }}>
+          <FadeIn delay={0.05}><StackItem cat="Agent Framework" name="Google ADK + Vertex AI" desc="All agents built with Google ADK, powered by Gemini 2.5 models via Vertex AI." /></FadeIn>
+          <FadeIn delay={0.1}><StackItem cat="Active Directory" name="Microsoft Entra ID" desc="Real Entra ID trial instance for actual user provisioning and access management." /></FadeIn>
+          <FadeIn delay={0.15}><StackItem cat="Tool Integration" name="MCP Server (FastMCP)" desc="Local MCP server via FastMCP + uvicorn, connecting to AD through Microsoft Graph API." /></FadeIn>
+          <FadeIn delay={0.2}><StackItem cat="Local Storage" name="SQLite" desc="Stores local user records (reducing AD calls) and session memory for persistent context." /></FadeIn>
+          <FadeIn delay={0.25}><StackItem cat="Cross-Branch" name="A2A Protocol" desc="Agent-to-Agent communication for remote branch operations over localhost mock server." /></FadeIn>
+          <FadeIn delay={0.3}><StackItem cat="Observability" name="ADK LoggingPlugin" desc="Built-in trace logging plus Teams agent logs for full request lifecycle visibility." /></FadeIn>
+        </div>
+      </section>
+
+      <Divider />
+
+      {/* Roadmap */}
+      <section style={{ paddingBottom: 56 }}>
+        <FadeIn><SectionTitle tag="Roadmap" tagColor={AMBER} title="What's next" subtitle="ULMA is a working prototype with clear paths to production-grade deployment." /></FadeIn>
+        <CardGrid>
+          <FadeIn delay={0.1}><InfoCard icon={"\uD83D\uDCAC"} title="Real Teams Integration" desc="Replace simulated messaging with actual Microsoft Teams for live update posting, approval workflows, and human-agent interaction." /></FadeIn>
+          <FadeIn delay={0.2}><InfoCard icon={"\u2601\uFE0F"} title="Cloud Deployment" desc="Move MCP server to Azure cloud, deploy agents to Google Cloud, and enable true multi-region branch communication." /></FadeIn>
+          <FadeIn delay={0.3}><InfoCard icon={"\uD83E\uDDEA"} title="Comprehensive Testing" desc="Expand test suites for complex enterprise scenarios: license assignments, conditional access policies, and multi-step approval chains." /></FadeIn>
+        </CardGrid>
+      </section>
+
+      <div style={{ borderTop: `1px solid ${BORDER}`, padding: "24px 0", textAlign: "center", color: MUTED, fontSize: 12 }}>
+        ULMA &mdash; Built with Google ADK, Vertex AI, and Microsoft Entra ID &middot; Collaboration with Vinura Galwaduge
+      </div>
+    </div>
+  );
+}
+
+// ══════════════════════════════════════════════
+// ─── MAIN APP WITH PROJECT SWITCHER ───
+// ══════════════════════════════════════════════
+
+const PROJECTS = [
+  { id: "ulma", label: "ULMA", color: CYAN, tagline: "Multi-Agent IT Automation" },
+  { id: "dualstgf", label: "DualSTGF", color: GOLD, tagline: "Fault Detection GNN" },
+];
+
+function App() {
+  const [active, setActive] = useState(() => {
+    const hash = window.location.hash.replace("#", "");
+    return PROJECTS.find(p => p.id === hash)?.id || "ulma";
+  });
+
+  useEffect(() => {
+    window.location.hash = active;
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }, [active]);
+
+  return (
+    <div>
+      {/* Top nav */}
+      <nav style={{
+        position: "sticky", top: 0, zIndex: 100,
+        background: DARKER + "ee", backdropFilter: "blur(12px)",
+        borderBottom: `1px solid ${BORDER}`,
+        display: "flex", alignItems: "center",
+        padding: "0 24px", height: 52,
+      }}>
+        <a href="/" style={{ color: "#fff", textDecoration: "none", fontWeight: 700, fontSize: 13, paddingRight: 20, borderRight: `1px solid ${BORDER}`, marginRight: 8 }}>
+          &larr; Home
+        </a>
+
+        {/* Project tabs */}
+        <div style={{ display: "flex", gap: 4, marginLeft: 8 }}>
+          {PROJECTS.map(p => (
+            <button key={p.id} onClick={() => setActive(p.id)} style={{
+              padding: "8px 20px", borderRadius: 6, fontSize: 13, fontWeight: 600,
+              background: active === p.id ? p.color + "18" : "transparent",
+              color: active === p.id ? p.color : MUTED,
+              border: active === p.id ? `1px solid ${p.color}40` : "1px solid transparent",
+              transition: "all 0.2s",
+            }}>
+              {p.label}
+              <span style={{ display: "none", fontSize: 11, color: MUTED, marginLeft: 6 }}>{p.tagline}</span>
+            </button>
+          ))}
+        </div>
+
+        {/* Right links */}
+        <div style={{ marginLeft: "auto", display: "flex", gap: 16, fontSize: 12 }}>
+          <a href="/projects.html" style={{ color: MUTED, textDecoration: "none", fontWeight: 600 }}>All Projects</a>
+          <a href="/publications.html" style={{ color: MUTED, textDecoration: "none", fontWeight: 600 }}>Publications</a>
+        </div>
+      </nav>
+
+      <div id="main-content" style={{ maxWidth: 960, margin: "0 auto", padding: "0 24px" }}>
+        {active === "ulma" ? <ULMAProject /> : <DualSTGFProject />}
+      </div>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+</script>
+</body>
+</html>
