@@ -1753,6 +1753,481 @@ function CFConicProject() {
 }
 
 // ══════════════════════════════════════════════
+// ─── CERTS — CF ROBUSTNESS FOR TREES ───
+// ══════════════════════════════════════════════
+
+function RobustnessDemo() {
+  const [tab, setTab] = useState("before");
+  const orangeAccent = "#D2691E";
+  const forestAccent = "#2D6A4F";
+
+  return (
+    <div style={{ background: CARD, border: `1px solid ${BORDER}`, borderRadius: 14, padding: 24 }}>
+      <div style={{ display: "flex", gap: 8, marginBottom: 20 }}>
+        {["before", "after"].map(t => (
+          <button key={t} onClick={() => setTab(t)} style={{
+            padding: "8px 20px", borderRadius: 8, fontSize: 13, fontWeight: 600,
+            background: tab === t ? forestAccent : CARD,
+            color: tab === t ? "#fff" : TEXT,
+            border: `1px solid ${tab === t ? forestAccent : BORDER}`,
+            transition: "all 0.25s",
+          }}>
+            {t === "before" ? "Before Retraining" : "After Retraining"}
+          </button>
+        ))}
+      </div>
+
+      <svg viewBox="0 0 520 260" style={{ width: "100%", maxWidth: 520, display: "block", margin: "0 auto" }}>
+        <defs>
+          <linearGradient id="rbBg1" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0%" stopColor="#FFF4EB" />
+            <stop offset="100%" stopColor="#E8F5EE" />
+          </linearGradient>
+        </defs>
+        <rect x="0" y="0" width="520" height="260" rx="12" fill="url(#rbBg1)" />
+
+        {/* Decision boundary */}
+        {tab === "before" ? (
+          <path d="M80 220 Q260 20, 440 180" stroke={forestAccent} strokeWidth="2.5" fill="none" strokeDasharray="8 4" />
+        ) : (
+          <path d="M80 200 Q240 40, 440 160" stroke="#C0392B" strokeWidth="2.5" fill="none" strokeDasharray="8 4" />
+        )}
+
+        {/* Boundary label */}
+        <text x="430" y={tab === "before" ? 170 : 150} fill={MUTED} fontSize="10" fontFamily="'JetBrains Mono', monospace" textAnchor="end">
+          Decision Boundary
+        </text>
+
+        {/* Denied region label */}
+        <text x="100" y="50" fill={MUTED} fontSize="11" fontWeight="600">Denied Region</text>
+        {/* Approved region label */}
+        <text x="300" y="240" fill={MUTED} fontSize="11" fontWeight="600">Approved Region</text>
+
+        {/* "You" dot - always same position */}
+        <circle cx="200" cy="100" r="10" fill="#C0392B" opacity="0.85" />
+        <text x="200" y="85" fill="#C0392B" fontSize="11" fontWeight="700" textAnchor="middle">You</text>
+
+        {/* CF dot */}
+        {tab === "before" ? (
+          <React.Fragment>
+            <circle cx="310" cy="170" r="10" fill={forestAccent} opacity="0.85" />
+            <text x="310" y="195" fill={forestAccent} fontSize="11" fontWeight="700" textAnchor="middle">CF &#10003;</text>
+          </React.Fragment>
+        ) : (
+          <React.Fragment>
+            <circle cx="310" cy="170" r="10" fill="#C0392B" opacity="0.85" />
+            <text x="310" y="195" fill="#C0392B" fontSize="11" fontWeight="700" textAnchor="middle">CF &#10007;</text>
+            {/* X mark on CF */}
+            <line x1="303" y1="163" x2="317" y2="177" stroke="#fff" strokeWidth="2" />
+            <line x1="317" y1="163" x2="303" y2="177" stroke="#fff" strokeWidth="2" />
+          </React.Fragment>
+        )}
+
+        {/* Arrow from You to CF */}
+        <line x1="212" y1="108" x2="298" y2="162" stroke={tab === "before" ? forestAccent : "#C0392B"} strokeWidth="1.5" strokeDasharray="4 3" markerEnd="none" />
+      </svg>
+
+      {tab === "after" && (
+        <div style={{
+          marginTop: 16, padding: "14px 18px", background: "#FDECEC",
+          border: "1px solid #C0392B30", borderRadius: 10, fontSize: 13, color: TEXT, lineHeight: 1.6,
+        }}>
+          <strong style={{ color: "#C0392B" }}>Problem:</strong> After model retraining, the decision boundary shifts
+          and previously valid counterfactuals become invalid. We test this systematically across
+          <strong> 7 methods x 5 models x 4 datasets = 10,000+ experiments</strong>.
+        </div>
+      )}
+    </div>
+  );
+}
+
+function CERTSDiagram() {
+  const orangeStroke = "#D2691E";
+  const forestStroke = "#2D6A4F";
+  const navyStroke = "#1E3A5F";
+  const goldStroke = "#B8860B";
+
+  const orangeBg = "#FFF4EB";
+  const forestBg = "#E8F5EE";
+  const navyBg = "#E8EEF5";
+  const goldBg = "#FFF8E8";
+
+  return (
+    <div style={{ background: CARD, border: `1px solid ${BORDER}`, borderRadius: 14, padding: 20, overflowX: "auto" }}>
+      <svg viewBox="0 0 800 340" style={{ width: "100%", minWidth: 600, display: "block", margin: "0 auto" }}>
+        {/* Phase 1 */}
+        <rect x="10" y="10" width="230" height="120" rx="12" fill={orangeBg} stroke={orangeStroke} strokeWidth="1.5" />
+        <text x="125" y="36" fill={orangeStroke} fontSize="13" fontWeight="700" textAnchor="middle">Phase 1</text>
+        <text x="125" y="54" fill={orangeStroke} fontSize="11" fontWeight="600" textAnchor="middle">Perturbation Ensemble</text>
+        <text x="125" y="74" fill={TEXT} fontSize="10" textAnchor="middle">Sample K=10 scenarios</text>
+        <text x="125" y="90" fill={TEXT} fontSize="10" textAnchor="middle">Random subsampling</text>
+        <text x="125" y="106" fill={TEXT} fontSize="10" textAnchor="middle">Hyperparameter variation</text>
+
+        {/* Arrow 1->2 */}
+        <line x1="240" y1="70" x2="280" y2="70" stroke={MUTED} strokeWidth="1.5" markerEnd="url(#certsArrow)" />
+        <defs>
+          <marker id="certsArrow" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+            <path d="M0,0 L8,3 L0,6 Z" fill={MUTED} />
+          </marker>
+        </defs>
+
+        {/* Phase 2 */}
+        <rect x="285" y="10" width="230" height="120" rx="12" fill={forestBg} stroke={forestStroke} strokeWidth="1.5" />
+        <text x="400" y="36" fill={forestStroke} fontSize="13" fontWeight="700" textAnchor="middle">Phase 2</text>
+        <text x="400" y="54" fill={forestStroke} fontSize="11" fontWeight="600" textAnchor="middle">Monte Carlo Tree Search</text>
+        <text x="400" y="74" fill={TEXT} fontSize="10" textAnchor="middle">UCB1 selection</text>
+        <text x="400" y="90" fill={TEXT} fontSize="10" textAnchor="middle">Constraint propagation</text>
+        <text x="400" y="106" fill={TEXT} fontSize="10" textAnchor="middle">Rollout reward</text>
+
+        {/* Arrow 2->3 */}
+        <line x1="515" y1="70" x2="555" y2="70" stroke={MUTED} strokeWidth="1.5" markerEnd="url(#certsArrow)" />
+
+        {/* Phase 3 */}
+        <rect x="560" y="10" width="230" height="120" rx="12" fill={navyBg} stroke={navyStroke} strokeWidth="1.5" />
+        <text x="675" y="36" fill={navyStroke} fontSize="13" fontWeight="700" textAnchor="middle">Phase 3</text>
+        <text x="675" y="54" fill={navyStroke} fontSize="11" fontWeight="600" textAnchor="middle">Multi-Objective Scoring</text>
+        <text x="675" y="76" fill={TEXT} fontSize="9.5" textAnchor="middle">Score = w&#x1D04;&#xB7;Consensus + w&#x2098;&#xB7;Margin</text>
+        <text x="675" y="92" fill={TEXT} fontSize="9.5" textAnchor="middle">&minus; w&#x209A;&#xB7;Proximity &minus; w&#x209B;&#xB7;Sparsity</text>
+
+        {/* Key Innovation box */}
+        <rect x="185" y="160" width="430" height="60" rx="10" fill={goldBg} stroke={goldStroke} strokeWidth="1.5" />
+        <text x="400" y="186" fill={goldStroke} fontSize="13" fontWeight="700" textAnchor="middle">Key Innovation</text>
+        <text x="400" y="206" fill={TEXT} fontSize="11" textAnchor="middle">Robustness as First-Class Criterion</text>
+
+        {/* Arrows down to innovation */}
+        <line x1="125" y1="130" x2="300" y2="165" stroke={MUTED} strokeWidth="1" strokeDasharray="4 3" />
+        <line x1="400" y1="130" x2="400" y2="160" stroke={MUTED} strokeWidth="1" strokeDasharray="4 3" />
+        <line x1="675" y1="130" x2="500" y2="165" stroke={MUTED} strokeWidth="1" strokeDasharray="4 3" />
+
+        {/* Result box */}
+        <rect x="140" y="250" width="520" height="60" rx="10" fill={forestBg} stroke={forestStroke} strokeWidth="1.5" />
+        <text x="400" y="276" fill={forestStroke} fontSize="13" fontWeight="700" textAnchor="middle">#1 in 158/248 scenarios (64%)</text>
+        <text x="400" y="296" fill={TEXT} fontSize="11" textAnchor="middle">Next best NICE: 58/248 (23%)</text>
+
+        {/* Arrow innovation -> result */}
+        <line x1="400" y1="220" x2="400" y2="250" stroke={MUTED} strokeWidth="1.5" markerEnd="url(#certsArrow)" />
+      </svg>
+    </div>
+  );
+}
+
+function ResultsCharts() {
+  const [view, setView] = useState("data");
+  const forestAccent = "#2D6A4F";
+
+  const methodColors = {
+    CERTS: "#2D6A4F", NICE: "#1E3A5F", DiCE: "#D2691E",
+    FOCUS: "#0D9488", FT: "#6B7280", CEML: "#7B2D8E", OCEAN: "#C0392B",
+  };
+
+  const dataPerturb = [
+    { dataset: "German", CERTS: 0.90, NICE: 0.69, DiCE: 0.73, FOCUS: 0.67, FT: 0.56, CEML: 0.52, OCEAN: 0.37 },
+    { dataset: "COMPAS", CERTS: 0.98, NICE: 0.79, DiCE: 0.85, FOCUS: 0.83, FT: 0.89, CEML: 0.59, OCEAN: 0.53 },
+    { dataset: "Spambase", CERTS: 0.52, NICE: 0.76, DiCE: 0.54, FOCUS: 0.56, FT: 0.72, CEML: 0.43, OCEAN: 0.42 },
+    { dataset: "HELOC", CERTS: 0.82, NICE: 0.51, DiCE: 0.53, FOCUS: 0.64, FT: 0.47, CEML: 0, OCEAN: 0 },
+  ];
+
+  const modelPerturb = [
+    { dataset: "RF", CERTS: 0.87, NICE: 0.49, DiCE: 0.56, FT: 0.55, CEML: 0.40 },
+    { dataset: "XGBoost", CERTS: 0.52, NICE: 0.72, DiCE: 0.71, FT: 0.54, CEML: 0.57 },
+    { dataset: "LightGBM", CERTS: 0.77, NICE: 0.76, DiCE: 0.72, FT: 0.43, CEML: 0.58 },
+    { dataset: "AdaBoost", CERTS: 0.68, NICE: 0.66, DiCE: 0.57, FT: 0.40, CEML: 0.44 },
+    { dataset: "CatBoost", CERTS: 0.87, NICE: 0.62, DiCE: 0.66, FT: 0.44, CEML: 0.59 },
+  ];
+
+  const chartData = view === "data" ? dataPerturb : modelPerturb;
+  const chartKeys = view === "data"
+    ? ["CERTS", "NICE", "DiCE", "FOCUS", "FT", "CEML", "OCEAN"]
+    : ["CERTS", "NICE", "DiCE", "FT", "CEML"];
+
+  const rankings = [
+    { method: "CERTS", wins: 158, pct: "64%" },
+    { method: "NICE", wins: 58, pct: "23%" },
+    { method: "DiCE", wins: 34, pct: "14%" },
+    { method: "CEML", wins: 25, pct: "10%" },
+    { method: "FT", wins: 13, pct: "5%" },
+    { method: "FOCUS", wins: 8, pct: "3%" },
+    { method: "OCEAN", wins: 0, pct: "0%" },
+  ];
+
+  return (
+    <div>
+      {/* Toggle */}
+      <div style={{ display: "flex", gap: 8, marginBottom: 20 }}>
+        {[
+          { key: "data", label: "Data Perturbation" },
+          { key: "model", label: "Model Perturbation" },
+        ].map(t => (
+          <button key={t.key} onClick={() => setView(t.key)} style={{
+            padding: "8px 20px", borderRadius: 8, fontSize: 13, fontWeight: 600,
+            background: view === t.key ? forestAccent : CARD,
+            color: view === t.key ? "#fff" : TEXT,
+            border: `1px solid ${view === t.key ? forestAccent : BORDER}`,
+            transition: "all 0.25s",
+          }}>
+            {t.label}
+          </button>
+        ))}
+      </div>
+
+      {/* Bar chart */}
+      <div style={{ background: CARD, border: `1px solid ${BORDER}`, borderRadius: 14, padding: "20px 10px 10px" }}>
+        <ResponsiveContainer width="100%" height={320}>
+          <BarChart data={chartData} margin={{ top: 5, right: 20, left: 0, bottom: 5 }}>
+            <XAxis dataKey="dataset" tick={{ fill: TEXT, fontSize: 11 }} axisLine={{ stroke: BORDER }} tickLine={false} />
+            <YAxis domain={[0, 1]} tick={{ fill: MUTED, fontSize: 11 }} axisLine={{ stroke: BORDER }} tickLine={false} />
+            <Tooltip
+              contentStyle={{ background: "#1F2937", border: "none", borderRadius: 8, color: "#fff", fontSize: 12 }}
+              itemStyle={{ color: "#fff" }}
+              labelStyle={{ color: "#D1D5DB", fontWeight: 600 }}
+            />
+            <Legend wrapperStyle={{ fontSize: 11 }} />
+            {chartKeys.map(k => (
+              <Bar key={k} dataKey={k} fill={methodColors[k]} radius={[3, 3, 0, 0]} />
+            ))}
+          </BarChart>
+        </ResponsiveContainer>
+      </div>
+
+      {/* Ranking table */}
+      <div style={{ marginTop: 20 }}>
+        <h4 style={{ color: "#111827", fontSize: 15, fontWeight: 700, marginBottom: 12 }}>
+          Overall #1 Rankings (out of 248 scenarios)
+        </h4>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(130px, 1fr))", gap: 10 }}>
+          {rankings.map((r, i) => (
+            <div key={r.method} style={{
+              background: i === 0 ? "#E8F5EE" : CARD,
+              border: `1px solid ${i === 0 ? "#2D6A4F40" : BORDER}`,
+              borderRadius: 10, padding: "14px 12px", textAlign: "center",
+            }}>
+              <div style={{
+                fontFamily: "'JetBrains Mono', monospace", fontSize: 20, fontWeight: 800,
+                color: methodColors[r.method] || MUTED,
+              }}>
+                {r.wins}
+              </div>
+              <div style={{ fontSize: 12, fontWeight: 600, color: "#111827", marginTop: 4 }}>{r.method}</div>
+              <div style={{ fontSize: 11, color: MUTED }}>{r.pct}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function CERTSProject() {
+  const orangeAccent = "#D2691E";
+  const forestAccent = "#2D6A4F";
+  const navyAccent = "#1E3A5F";
+  const redAccent = "#C0392B";
+  const purpleAccent = "#7B2D8E";
+  const tealAccent = "#0D9488";
+  const goldAccent = "#B8860B";
+
+  const orangeBg = "#FFF4EB";
+  const forestBg = "#E8F5EE";
+  const navyBg = "#E8EEF5";
+  const redBg = "#FDECEC";
+  const purpleBg = "#F5EBF7";
+  const tealBg = "#E6F7F5";
+  const goldBg = "#FFF8E8";
+
+  const methodCards = [
+    { name: "CERTS", type: "Search-Based", algo: "MCTS + Perturbation Ensemble", color: forestAccent, bg: forestBg },
+    { name: "DiCE", type: "Gradient-Based", algo: "Diverse CF via gradient descent", color: orangeAccent, bg: orangeBg },
+    { name: "NICE", type: "Instance-Based", algo: "Nearest instance + sparsity", color: navyAccent, bg: navyBg },
+    { name: "Feature Tweak", type: "Tree-Specific", algo: "Feature tweaking for tree paths", color: "#6B7280", bg: "#F3F4F6" },
+    { name: "FOCUS", type: "Perturbation", algo: "Flexible optimizable counterfactuals", color: tealAccent, bg: tealBg },
+    { name: "OCEAN", type: "Optimization", algo: "Optimal CF for tree ensembles (MILP)", color: redAccent, bg: redBg },
+    { name: "CEML", type: "Constraint-Based", algo: "Constrained enumeration for ML", color: purpleAccent, bg: purpleBg },
+  ];
+
+  const takeaways = [
+    { num: "1", text: "Always evaluate CF robustness under both data and model perturbation before deployment." },
+    { num: "2", text: "MCTS-based search (CERTS) dominates gradient-free baselines for tree ensembles, winning 64% of scenarios." },
+    { num: "3", text: "Consensus scoring across perturbed models is more reliable than single-model validity." },
+    { num: "4", text: "HEOM distance produces more actionable counterfactuals for mixed-type features than L1/L2 norms." },
+    { num: "5", text: "Boosted ensembles (XGBoost, CatBoost) are harder to explain robustly than bagged ones (RF)." },
+    { num: "6", text: "Robustness and proximity are inversely correlated — optimizing both requires explicit multi-objective scoring." },
+  ];
+
+  return (
+    <div>
+      {/* ─── Overview ─── */}
+      <section style={{ paddingTop: 64, paddingBottom: 48 }}>
+        <FadeIn>
+          <div style={{ display: "flex", gap: 8, marginBottom: 20, flexWrap: "wrap" }}>
+            <Tag color={orangeAccent}>XAI</Tag>
+            <Tag color={forestAccent}>Robustness</Tag>
+            <Tag color={navyAccent}>Tree Ensembles</Tag>
+            <Tag color={purpleAccent}>Under Review</Tag>
+          </div>
+          <h1 style={{
+            fontFamily: "'Playfair Display', Georgia, serif",
+            fontSize: "clamp(32px, 5vw, 50px)", fontWeight: 900,
+            color: "#111827", lineHeight: 1.1, margin: "0 0 16px",
+          }}>
+            Robustness of Counterfactuals for Tree-Based Ensembles
+          </h1>
+          <p style={{
+            fontSize: "clamp(16px, 2.2vw, 20px)", color: TEXT, lineHeight: 1.5,
+            maxWidth: 720, marginBottom: 8,
+          }}>
+            R. Wijethunga*, V. Galwaduge*, A. Sadhu, J. Samarabandu
+          </p>
+          <p style={{ fontSize: 13, color: MUTED, marginBottom: 32 }}>
+            *Equal contribution &middot; IEEE CJECE Minor Revision
+          </p>
+        </FadeIn>
+
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 12, marginBottom: 16 }}>
+          <StatCard value="10K+" label="Experiments" color={orangeAccent} delay={0.05} />
+          <StatCard value="7" label="CF Methods" color={forestAccent} delay={0.1} />
+          <StatCard value="5" label="Tree Models" color={navyAccent} delay={0.15} />
+          <StatCard value="4" label="Datasets" color={goldAccent} delay={0.2} />
+          <StatCard value="158/248" label="CERTS #1" color={forestAccent} delay={0.25} />
+          <StatCard value="2.7\u00d7" label="vs Next Best" color={orangeAccent} delay={0.3} />
+        </div>
+      </section>
+
+      {/* ─── The Problem ─── */}
+      <section style={{ paddingBottom: 56 }}>
+        <FadeIn>
+          <SectionTitle
+            tag="Motivation" tagColor={redAccent}
+            title="The Problem"
+            subtitle="Counterfactual explanations for tree ensembles break under model retraining and data shifts."
+          />
+        </FadeIn>
+        <FadeIn delay={0.1}>
+          <RobustnessDemo />
+        </FadeIn>
+        <div style={{ marginTop: 24 }}>
+          <CardGrid minWidth={240}>
+            <InfoCard icon="\u{1F332}" title="Non-Differentiable" desc="Tree ensembles lack gradients, making gradient-based CF methods inapplicable or unreliable." color={forestAccent} />
+            <InfoCard icon="\u{26A0}\u{FE0F}" title="Structurally Unstable" desc="Small data changes cause large tree structure shifts, invalidating previously valid counterfactuals." color={orangeAccent} />
+            <InfoCard icon="\u{1F9E9}" title="NP-Hard Search" desc="Finding optimal counterfactuals over discrete tree paths is combinatorially explosive." color={navyAccent} />
+            <InfoCard icon="\u{1F500}" title="Bagging vs Boosting" desc="Random Forests vs XGBoost/CatBoost have fundamentally different instability patterns." color={purpleAccent} />
+          </CardGrid>
+        </div>
+      </section>
+
+      {/* ─── CERTS Method ─── */}
+      <section style={{ paddingBottom: 56 }}>
+        <FadeIn>
+          <SectionTitle
+            tag="Our Approach" tagColor={forestAccent}
+            title="CERTS Method"
+            subtitle="Counterfactual Explanations with Robustness for Tree-based enSembles."
+          />
+        </FadeIn>
+        <FadeIn delay={0.1}>
+          <CERTSDiagram />
+        </FadeIn>
+        <div style={{ marginTop: 24 }}>
+          <CardGrid minWidth={240}>
+            <InfoCard icon="\u{1F3B2}" title="Perturbation Ensemble" desc="Generate K=10 perturbed model/data scenarios via random subsampling and hyperparameter variation to test robustness." color={orangeAccent} />
+            <InfoCard icon="\u{1F333}" title="MCTS" desc="Monte Carlo Tree Search explores the combinatorial feature space using UCB1 selection, constraint propagation, and rollout rewards." color={forestAccent} />
+            <InfoCard icon="\u{1F3AF}" title="Consensus Scoring" desc="Multi-objective scoring weights consensus across perturbed models, prediction margin, proximity, and sparsity." color={navyAccent} />
+            <InfoCard icon="\u{1F4CF}" title="HEOM Distance" desc="Heterogeneous Euclidean-Overlap Metric handles mixed categorical and numerical features natively." color={goldAccent} />
+          </CardGrid>
+        </div>
+      </section>
+
+      {/* ─── Methods Tested ─── */}
+      <section style={{ paddingBottom: 56 }}>
+        <FadeIn>
+          <SectionTitle
+            tag="Benchmark" tagColor={navyAccent}
+            title="Methods Tested"
+            subtitle="7 counterfactual generation methods compared across all perturbation scenarios."
+          />
+        </FadeIn>
+        <div style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
+          gap: 14,
+        }}>
+          {methodCards.map((m, i) => (
+            <FadeIn key={m.name} delay={i * 0.05}>
+              <div style={{
+                background: m.bg, border: `1px solid ${m.color}30`,
+                borderRadius: 12, padding: "20px 18px", height: "100%",
+                transition: "transform 0.3s", cursor: "default",
+              }}
+              onMouseEnter={e => e.currentTarget.style.transform = "translateY(-3px)"}
+              onMouseLeave={e => e.currentTarget.style.transform = "translateY(0)"}
+              >
+                <div style={{ fontSize: 15, fontWeight: 700, color: m.color, marginBottom: 4 }}>{m.name}</div>
+                <div style={{ fontSize: 11, color: MUTED, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 8 }}>{m.type}</div>
+                <div style={{ fontSize: 13, color: TEXT, lineHeight: 1.5 }}>{m.algo}</div>
+              </div>
+            </FadeIn>
+          ))}
+        </div>
+      </section>
+
+      {/* ─── Results ─── */}
+      <section style={{ paddingBottom: 56 }}>
+        <FadeIn>
+          <SectionTitle
+            tag="Results" tagColor={forestAccent}
+            title="Results"
+            subtitle="Robustness scores across data and model perturbation scenarios."
+          />
+        </FadeIn>
+        <FadeIn delay={0.1}>
+          <ResultsCharts />
+        </FadeIn>
+      </section>
+
+      {/* ─── Takeaways ─── */}
+      <section style={{ paddingBottom: 56 }}>
+        <FadeIn>
+          <SectionTitle
+            tag="Insights" tagColor={goldAccent}
+            title="Takeaways"
+            subtitle="Key recommendations from 10,000+ robustness experiments."
+          />
+        </FadeIn>
+        <div style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))",
+          gap: 14,
+        }}>
+          {takeaways.map((t, i) => (
+            <FadeIn key={t.num} delay={i * 0.06}>
+              <div style={{
+                background: CARD, border: `1px solid ${BORDER}`, borderRadius: 12,
+                padding: "22px 20px", display: "flex", gap: 14, alignItems: "flex-start",
+                height: "100%", transition: "border-color 0.3s",
+              }}
+              onMouseEnter={e => e.currentTarget.style.borderColor = forestAccent}
+              onMouseLeave={e => e.currentTarget.style.borderColor = BORDER}
+              >
+                <div style={{
+                  fontFamily: "'JetBrains Mono', monospace", fontSize: 22, fontWeight: 800,
+                  color: forestAccent, minWidth: 32, textAlign: "center", lineHeight: 1,
+                }}>
+                  {t.num}
+                </div>
+                <p style={{ color: TEXT, fontSize: 14, lineHeight: 1.65, margin: 0 }}>{t.text}</p>
+              </div>
+            </FadeIn>
+          ))}
+        </div>
+      </section>
+
+      <div style={{ borderTop: `1px solid ${BORDER}`, padding: "24px 0", textAlign: "center", color: MUTED, fontSize: 12 }}>
+        Under Review &middot; *Equal contribution &middot; IEEE CJECE Minor Revision
+      </div>
+    </div>
+  );
+}
+
+// ══════════════════════════════════════════════
 // ─── MAIN APP WITH PROJECT SWITCHER ───
 // ══════════════════════════════════════════════
 
@@ -1763,6 +2238,7 @@ const PROJECTS = [
   { id: "mitacs",      label: "Mitacs Leak",     color: GREEN,  tagline: "CO\u2082 Refrigeration" },
   { id: "necfe",       label: "NE-CFE",         color: PURPLE, tagline: "Counterfactual XAI" },
   { id: "cfconic",     label: "CF Conic",       color: "#5C6AC4", tagline: "Counterfactual XAI" },
+  { id: "certs",       label: "CERTS",          color: "#2D6A4F", tagline: "CF Robustness" },
   { id: "indoornav",   label: "Indoor Nav",     color: CYAN,   tagline: "Visually Impaired" },
   { id: "ergomate",    label: "Ergomate",       color: AMBER,  tagline: "IoT Office System" },
 ];
@@ -1774,6 +2250,7 @@ const PROJECT_COMPONENTS = {
   mitacs: MitacsProject,
   necfe: NECFEProject,
   cfconic: CFConicProject,
+  certs: CERTSProject,
   indoornav: IndoorNavProject,
   ergomate: ErgomateProject,
 };
