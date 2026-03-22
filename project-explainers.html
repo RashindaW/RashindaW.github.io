@@ -1260,6 +1260,499 @@ function ErgomateProject() {
 }
 
 // ══════════════════════════════════════════════
+// ─── CF CONIC OPTIMIZATION ───
+// ══════════════════════════════════════════════
+
+function CFExplainer() {
+  const [step, setStep] = useState(0);
+  const [income, setIncome] = useState(32);
+  const [debt, setDebt] = useState(18);
+  const [history, setHistory] = useState(2);
+
+  const score = Math.round(income * 0.8 - debt * 1.2 + history * 8 - 10);
+  const approved = score >= 50;
+  const suggestions = [];
+  if (income < 38) suggestions.push("Increase income to $38K+");
+  if (debt > 12) suggestions.push("Reduce debt to $12K or less");
+  if (history < 3) suggestions.push("Build 3+ years of credit history");
+
+  const steps = [
+    {
+      title: "1. A person applies for a loan",
+      content: (
+        <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
+          {[
+            { label: "Income", value: "$32K", icon: "\uD83D\uDCB0" },
+            { label: "Debt", value: "$18K", icon: "\uD83D\uDCB3" },
+            { label: "Credit History", value: "2 years", icon: "\uD83D\uDCC5" },
+          ].map(f => (
+            <div key={f.label} style={{
+              background: CARD, border: `1px solid ${BORDER}`, borderRadius: 10,
+              padding: "16px 20px", flex: "1 1 120px", textAlign: "center",
+            }}>
+              <div style={{ fontSize: 24, marginBottom: 6 }}>{f.icon}</div>
+              <div style={{ color: MUTED, fontSize: 11, textTransform: "uppercase", letterSpacing: "0.05em" }}>{f.label}</div>
+              <div style={{ color: "#111827", fontWeight: 700, fontSize: 18, fontFamily: "'JetBrains Mono', monospace" }}>{f.value}</div>
+            </div>
+          ))}
+        </div>
+      ),
+    },
+    {
+      title: "2. The model rejects the application",
+      content: (
+        <div style={{ textAlign: "center" }}>
+          <svg width="320" height="220" viewBox="0 0 320 220" style={{ maxWidth: "100%" }}>
+            <defs>
+              <linearGradient id="cfRejectGrad" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0%" stopColor="#E11D48" stopOpacity="0.08" />
+                <stop offset="100%" stopColor="#E11D48" stopOpacity="0.02" />
+              </linearGradient>
+              <linearGradient id="cfApproveGrad" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0%" stopColor="#16A34A" stopOpacity="0.02" />
+                <stop offset="100%" stopColor="#16A34A" stopOpacity="0.08" />
+              </linearGradient>
+            </defs>
+            <rect x="0" y="0" width="160" height="220" fill="url(#cfRejectGrad)" rx="8" />
+            <rect x="160" y="0" width="160" height="220" fill="url(#cfApproveGrad)" rx="8" />
+            <line x1="160" y1="10" x2="160" y2="210" stroke="#5C6AC4" strokeWidth="2.5" strokeDasharray="6,4" />
+            <text x="80" y="30" textAnchor="middle" fill="#E11D48" fontSize="11" fontWeight="700">REJECTED</text>
+            <text x="240" y="30" textAnchor="middle" fill="#16A34A" fontSize="11" fontWeight="700">APPROVED</text>
+            <text x="160" y="215" textAnchor="middle" fill="#5C6AC4" fontSize="10" fontWeight="600">Decision Boundary</text>
+            <circle cx="90" cy="130" r="10" fill="#E11D48" stroke="#fff" strokeWidth="2" />
+            <text x="90" y="155" textAnchor="middle" fill="#E11D48" fontSize="10" fontWeight="600">Applicant</text>
+          </svg>
+          <div style={{
+            display: "inline-flex", alignItems: "center", gap: 8,
+            background: "#FEF2F2", border: "1px solid #FECACA", borderRadius: 8,
+            padding: "10px 18px", marginTop: 12,
+          }}>
+            <span style={{ fontSize: 18 }}>{"\u274C"}</span>
+            <span style={{ color: "#E11D48", fontWeight: 600, fontSize: 14 }}>Loan Denied</span>
+          </div>
+        </div>
+      ),
+    },
+    {
+      title: "3. CF finds the nearest approved point",
+      content: (
+        <div style={{ textAlign: "center" }}>
+          <svg width="320" height="220" viewBox="0 0 320 220" style={{ maxWidth: "100%" }}>
+            <defs>
+              <linearGradient id="cfRejectGrad2" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0%" stopColor="#E11D48" stopOpacity="0.08" />
+                <stop offset="100%" stopColor="#E11D48" stopOpacity="0.02" />
+              </linearGradient>
+              <linearGradient id="cfApproveGrad2" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0%" stopColor="#16A34A" stopOpacity="0.02" />
+                <stop offset="100%" stopColor="#16A34A" stopOpacity="0.08" />
+              </linearGradient>
+            </defs>
+            <rect x="0" y="0" width="160" height="220" fill="url(#cfRejectGrad2)" rx="8" />
+            <rect x="160" y="0" width="160" height="220" fill="url(#cfApproveGrad2)" rx="8" />
+            <line x1="160" y1="10" x2="160" y2="210" stroke="#5C6AC4" strokeWidth="2.5" strokeDasharray="6,4" />
+            <text x="80" y="30" textAnchor="middle" fill="#E11D48" fontSize="11" fontWeight="700">REJECTED</text>
+            <text x="240" y="30" textAnchor="middle" fill="#16A34A" fontSize="11" fontWeight="700">APPROVED</text>
+            <circle cx="90" cy="130" r="10" fill="#E11D48" stroke="#fff" strokeWidth="2" />
+            <text x="90" y="155" textAnchor="middle" fill="#E11D48" fontSize="10" fontWeight="600">Original</text>
+            <circle cx="175" cy="120" r="10" fill="#16A34A" stroke="#fff" strokeWidth="2" />
+            <text x="175" y="145" textAnchor="middle" fill="#16A34A" fontSize="10" fontWeight="600">CF Point</text>
+            <defs>
+              <marker id="cfArrow" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+                <path d="M0,0 L8,3 L0,6" fill="#5C6AC4" />
+              </marker>
+            </defs>
+            <line x1="100" y1="128" x2="163" y2="122" stroke="#5C6AC4" strokeWidth="2" markerEnd="url(#cfArrow)" />
+          </svg>
+          <div style={{
+            display: "inline-flex", alignItems: "center", gap: 8,
+            background: "#F0FDF4", border: "1px solid #BBF7D0", borderRadius: 8,
+            padding: "10px 18px", marginTop: 12,
+          }}>
+            <span style={{ fontSize: 18 }}>{"\uD83D\uDCA1"}</span>
+            <span style={{ color: "#16A34A", fontWeight: 600, fontSize: 14 }}>Minimal change to cross the boundary</span>
+          </div>
+        </div>
+      ),
+    },
+    {
+      title: "4. Try it: adjust features to get approved",
+      content: (
+        <div>
+          <div style={{ display: "flex", flexDirection: "column", gap: 16, marginBottom: 20 }}>
+            {[
+              { label: "Income ($K)", val: income, set: setIncome, min: 20, max: 60, cf: 38 },
+              { label: "Debt ($K)", val: debt, set: setDebt, min: 0, max: 30, cf: 12 },
+              { label: "Credit History (yrs)", val: history, set: setHistory, min: 0, max: 10, cf: 3 },
+            ].map(s => (
+              <div key={s.label}>
+                <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
+                  <span style={{ color: TEXT, fontSize: 13, fontWeight: 600 }}>{s.label}</span>
+                  <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 13, color: "#111827", fontWeight: 700 }}>{s.val}</span>
+                </div>
+                <input type="range" min={s.min} max={s.max} value={s.val}
+                  onChange={e => s.set(Number(e.target.value))}
+                  style={{ width: "100%", accentColor: "#5C6AC4" }}
+                />
+              </div>
+            ))}
+          </div>
+
+          <div style={{
+            background: approved ? "#F0FDF4" : "#FEF2F2",
+            border: `1px solid ${approved ? "#BBF7D0" : "#FECACA"}`,
+            borderRadius: 10, padding: "16px 20px", textAlign: "center", marginBottom: 16,
+          }}>
+            <div style={{ fontSize: 12, color: MUTED, marginBottom: 4 }}>Score</div>
+            <div style={{
+              fontFamily: "'JetBrains Mono', monospace", fontSize: 32, fontWeight: 800,
+              color: approved ? "#16A34A" : "#E11D48",
+            }}>
+              {score} / 50
+            </div>
+            <div style={{ fontWeight: 700, fontSize: 14, color: approved ? "#16A34A" : "#E11D48", marginTop: 4 }}>
+              {approved ? "\u2705 Approved!" : "\u274C Rejected"}
+            </div>
+          </div>
+
+          {!approved && suggestions.length > 0 && (
+            <div style={{
+              background: "#FFFBEB", border: "1px solid #FDE68A", borderRadius: 8,
+              padding: 14, fontSize: 13, color: "#92400E",
+            }}>
+              <div style={{ fontWeight: 700, marginBottom: 6 }}>{"\uD83D\uDCA1"} CF suggestions:</div>
+              {suggestions.map(s => <div key={s} style={{ marginBottom: 2 }}>{"\u2022"} {s}</div>)}
+            </div>
+          )}
+        </div>
+      ),
+    },
+  ];
+
+  return (
+    <div style={{ background: CARD, border: `1px solid ${BORDER}`, borderRadius: 14, overflow: "hidden" }}>
+      {/* Step tabs */}
+      <div style={{ display: "flex", borderBottom: `1px solid ${BORDER}`, flexWrap: "wrap" }}>
+        {steps.map((s, i) => (
+          <button key={i} onClick={() => setStep(i)} style={{
+            flex: "1 1 120px", padding: "12px 16px",
+            background: step === i ? "#EEF2FF" : "transparent",
+            color: step === i ? "#5C6AC4" : MUTED,
+            fontWeight: step === i ? 700 : 500, fontSize: 12,
+            borderBottom: step === i ? "2px solid #5C6AC4" : "2px solid transparent",
+            transition: "all 0.2s",
+          }}>
+            Step {i + 1}
+          </button>
+        ))}
+      </div>
+      {/* Step content */}
+      <div style={{ padding: "24px 20px" }}>
+        <h4 style={{ color: "#111827", fontWeight: 700, fontSize: 15, marginBottom: 16 }}>{steps[step].title}</h4>
+        {steps[step].content}
+      </div>
+      {/* Navigation */}
+      <div style={{ display: "flex", justifyContent: "space-between", padding: "0 20px 16px" }}>
+        <button onClick={() => setStep(Math.max(0, step - 1))} disabled={step === 0} style={{
+          padding: "8px 16px", borderRadius: 6, fontSize: 13, fontWeight: 600,
+          background: step === 0 ? "#F3F4F6" : "#EEF2FF", color: step === 0 ? "#9CA3AF" : "#5C6AC4",
+          cursor: step === 0 ? "default" : "pointer",
+        }}>
+          {"\u2190"} Prev
+        </button>
+        <button onClick={() => setStep(Math.min(steps.length - 1, step + 1))} disabled={step === steps.length - 1} style={{
+          padding: "8px 16px", borderRadius: 6, fontSize: 13, fontWeight: 600,
+          background: step === steps.length - 1 ? "#F3F4F6" : "#5C6AC4",
+          color: step === steps.length - 1 ? "#9CA3AF" : "#fff",
+          cursor: step === steps.length - 1 ? "default" : "pointer",
+        }}>
+          Next {"\u2192"}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function CFConicProject() {
+  const [model, setModel] = useState("lr");
+
+  const lrData = [
+    { dataset: "German Credit", TLPS: 74.9, DACE: 74.8, Artelt: 39.1, Ours: 70.0 },
+    { dataset: "Breast Cancer", TLPS: 94.0, DACE: 94.0, Artelt: 37.2, Ours: 62.8 },
+    { dataset: "Diabetes",      TLPS: 73.4, DACE: 74.0, Artelt: 48.1, Ours: 50.05 },
+  ];
+  const mlpData = [
+    { dataset: "German Credit", TLPS: 31.2, DACE: 31.6, Ours: 70.0 },
+    { dataset: "Breast Cancer", TLPS: 37.8, DACE: 30.3, Ours: 62.8 },
+    { dataset: "Diabetes",      TLPS: 35.2, DACE: 35.6, Ours: 50.0 },
+  ];
+
+  const chartData = model === "lr" ? lrData : mlpData;
+  const chartColors = { TLPS: "#6B7280", DACE: "#9CA3AF", Artelt: "#D1D5DB", Ours: "#5C6AC4" };
+  const chartKeys = model === "lr" ? ["TLPS", "DACE", "Artelt", "Ours"] : ["TLPS", "DACE", "Ours"];
+
+  const comparisonData = [
+    { method: "TLPS", proximity: "Weighted L1", plausibility: "None", solver: "Mixed-Integer", models: "LR only" },
+    { method: "DACE", proximity: "Weighted L1", plausibility: "Kernel Density", solver: "Mixed-Integer", models: "LR only" },
+    { method: "Artelt (2022)", proximity: "Euclidean", plausibility: "GMM-based", solver: "Convex (CVXPY)", models: "LR only" },
+    { method: "Ours", proximity: "HEOM", plausibility: "Mahalanobis", solver: "DQCP (CVXPY/MOSEK)", models: "LR + MLP" },
+  ];
+
+  return (
+    <div>
+      {/* ─── Overview ─── */}
+      <section style={{ paddingTop: 64, paddingBottom: 48 }}>
+        <FadeIn>
+          <div style={{ display: "flex", gap: 8, marginBottom: 20, flexWrap: "wrap" }}>
+            <Tag color={PURPLE}>Explainable AI</Tag>
+            <Tag color={CYAN}>Conic Optimization</Tag>
+            <Tag color={AMBER}>IEEE ICAC 2025</Tag>
+          </div>
+          <h1 style={{
+            fontFamily: "'Playfair Display', Georgia, serif",
+            fontSize: "clamp(32px, 5vw, 50px)", fontWeight: 900,
+            color: "#111827", lineHeight: 1.1, margin: "0 0 16px",
+          }}>
+            Counterfactual Explanations via Conic Optimization
+          </h1>
+          <p style={{
+            fontSize: "clamp(16px, 2.2vw, 20px)", color: TEXT, lineHeight: 1.5,
+            maxWidth: 700, margin: "0 0 16px",
+          }}>
+            A novel objective function combining HEOM proximity with Mahalanobis plausibility, solved via quasi-convex programming (CVXPY/MOSEK).
+          </p>
+          <p style={{ fontSize: 13, color: MUTED, lineHeight: 1.6, marginBottom: 6 }}>
+            Vinura Galwaduge*, Rashinda Wijethunga*, Ayan Sadhu, Jagath Samarabandu &mdash; Western University
+          </p>
+          <p style={{ fontSize: 12, color: MUTED, fontStyle: "italic", marginBottom: 12 }}>
+            *Equal contribution
+          </p>
+          <p style={{ fontSize: 13, color: MUTED, marginBottom: 20 }}>
+            2025 7th International Conference on Advancements in Computing (ICAC) &middot; IEEE
+          </p>
+          <a href="https://doi.org/10.1109/ICAC69156.2025.11361508" target="_blank" rel="noopener" style={{
+            display: "inline-flex", alignItems: "center", gap: 8,
+            background: "#5C6AC4", color: "#fff", padding: "10px 22px",
+            borderRadius: 8, fontSize: 14, fontWeight: 600,
+            textDecoration: "none", transition: "background 0.2s",
+          }}
+          onMouseEnter={e => e.currentTarget.style.background = "#4F5AB5"}
+          onMouseLeave={e => e.currentTarget.style.background = "#5C6AC4"}
+          >
+            {"\uD83D\uDCC4"} Read Paper
+          </a>
+        </FadeIn>
+        <div style={{ display: "flex", gap: 14, flexWrap: "wrap", marginTop: 32 }}>
+          <StatCard value="HEOM" label="Proximity Metric" color="#5C6AC4" delay={0.1} />
+          <StatCard value="Mahalanobis" label="Plausibility Metric" color="#0D9488" delay={0.2} />
+          <StatCard value="DQCP" label="Quasi-Convex Solver" color={PURPLE} delay={0.3} />
+          <StatCard value="3" label="Benchmark Datasets" color={AMBER} delay={0.4} />
+        </div>
+      </section>
+
+      <Divider />
+
+      {/* ─── Interactive CF Explainer ─── */}
+      <section style={{ paddingBottom: 56 }}>
+        <FadeIn>
+          <SectionTitle tag="Interactive Explainer" tagColor="#5C6AC4"
+            title="What is a counterfactual explanation?"
+            subtitle="A counterfactual shows the smallest change needed to flip a model's decision. Walk through the steps below to see how it works."
+          />
+        </FadeIn>
+        <FadeIn delay={0.15}>
+          <CFExplainer />
+        </FadeIn>
+
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: 16, marginTop: 32 }}>
+          <FadeIn delay={0.2}>
+            <div style={{ background: CARD, border: `1px solid ${BORDER}`, borderRadius: 12, padding: 24 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12 }}>
+                <div style={{
+                  width: 36, height: 36, borderRadius: 8, background: "#EEF2FF",
+                  display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18,
+                }}>{"\uD83D\uDCCF"}</div>
+                <div style={{ fontWeight: 700, color: "#111827", fontSize: 15 }}>Proximity (HEOM)</div>
+              </div>
+              <p style={{ color: TEXT, fontSize: 13, lineHeight: 1.6 }}>
+                Heterogeneous Euclidean-Overlap Metric correctly handles <strong>mixed feature types</strong>:
+                Euclidean distance for continuous features, simple overlap for categorical. This ensures
+                the counterfactual is as close as possible to the original input.
+              </p>
+            </div>
+          </FadeIn>
+          <FadeIn delay={0.3}>
+            <div style={{ background: CARD, border: `1px solid ${BORDER}`, borderRadius: 12, padding: 24 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12 }}>
+                <div style={{
+                  width: 36, height: 36, borderRadius: 8, background: "#F0FDFA",
+                  display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18,
+                }}>{"\uD83C\uDFAF"}</div>
+                <div style={{ fontWeight: 700, color: "#111827", fontSize: 15 }}>Plausibility (Mahalanobis)</div>
+              </div>
+              <p style={{ color: TEXT, fontSize: 13, lineHeight: 1.6 }}>
+                Mahalanobis distance to the <strong>target class centroid</strong> ensures the counterfactual
+                lands in a region where real approved applicants exist, not in an implausible gap
+                between clusters.
+              </p>
+            </div>
+          </FadeIn>
+        </div>
+      </section>
+
+      <Divider />
+
+      {/* ─── Method ─── */}
+      <section style={{ paddingBottom: 56 }}>
+        <FadeIn>
+          <SectionTitle tag="Method" tagColor="#0D9488"
+            title="Novel objective function"
+            subtitle="We combine proximity and plausibility into a single weighted objective, solved via disciplined quasi-convex programming."
+          />
+        </FadeIn>
+
+        <FadeIn delay={0.1}>
+          <div style={{
+            background: "#F9FAFB", border: `1px solid ${BORDER}`, borderRadius: 12,
+            padding: "24px 28px", marginBottom: 32, fontFamily: "'JetBrains Mono', monospace",
+            fontSize: 14, lineHeight: 2, overflowX: "auto",
+          }}>
+            <div style={{ color: MUTED, fontSize: 11, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 12, fontFamily: "'Source Sans 3', sans-serif" }}>Optimization Problem</div>
+            <div style={{ color: "#111827" }}>
+              <strong style={{ color: "#5C6AC4" }}>minimize</strong>{"   "}(1-{"\u03BB"}){"\u00B7"}d<sub>HEOM</sub>(x, x') + {"\u03BB"}{"\u00B7"}d<sub>MAHA</sub>(x', c<sub>target</sub>)
+            </div>
+            <div style={{ color: "#111827", marginTop: 4 }}>
+              <strong style={{ color: "#E11D48" }}>subject to</strong>{"  "}{"\u03C3"}(x'<sup>T</sup>A) {"\u2265"} t<sub>c</sub>{"  "}or{"  "}{"\u2264"} t<sub>c</sub>
+            </div>
+          </div>
+        </FadeIn>
+
+        <CardGrid minWidth={220}>
+          {[
+            { icon: "\uD83D\uDCCF", title: "HEOM Distance", desc: "Heterogeneous Euclidean-Overlap Metric handles mixed continuous/categorical features with proper normalization, unlike pure Euclidean approaches.", color: "#5C6AC4" },
+            { icon: "\uD83C\uDFAF", title: "Mahalanobis to Target Class", desc: "Distance to the target class centroid weighted by the inverse covariance matrix, ensuring CFs land in plausible regions of the data manifold.", color: "#0D9488" },
+            { icon: "\u2699\uFE0F", title: "Quasi-Convex Solving", desc: "The combined objective is DQCP (Disciplined Quasi-Convex Program), solved efficiently by CVXPY with the MOSEK backend for global optimality guarantees.", color: PURPLE },
+            { icon: "\uD83E\uDDE0", title: "Model Flexibility", desc: "Works with both logistic regression (convex constraint) and neural networks (MLP via layer-wise linearization), unlike integer-programming methods limited to LR.", color: AMBER },
+          ].map(c => (
+            <FadeIn key={c.title} delay={0.1}>
+              <div style={{ background: CARD, border: `1px solid ${BORDER}`, borderRadius: 10, padding: 20 }}>
+                <div style={{ fontSize: 22, marginBottom: 8 }}>{c.icon}</div>
+                <div style={{ color: c.color, fontWeight: 700, fontSize: 14, marginBottom: 6 }}>{c.title}</div>
+                <div style={{ color: TEXT, fontSize: 13, lineHeight: 1.6 }}>{c.desc}</div>
+              </div>
+            </FadeIn>
+          ))}
+        </CardGrid>
+
+        {/* Comparison table */}
+        <FadeIn delay={0.2}>
+          <div style={{ marginTop: 36 }}>
+            <h3 style={{ color: "#111827", fontSize: 16, fontWeight: 700, marginBottom: 16 }}>Comparison with existing methods</h3>
+            <div style={{ overflowX: "auto" }}>
+              <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13, minWidth: 560 }}>
+                <thead>
+                  <tr style={{ borderBottom: `2px solid ${BORDER}` }}>
+                    {["Method", "Proximity", "Plausibility", "Solver", "Models"].map(h => (
+                      <th key={h} style={{ textAlign: "left", padding: "10px 12px", color: MUTED, fontWeight: 600, fontSize: 11, textTransform: "uppercase", letterSpacing: "0.06em" }}>{h}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {comparisonData.map((r, i) => (
+                    <tr key={r.method} style={{
+                      borderBottom: `1px solid ${BORDER}`,
+                      background: r.method === "Ours" ? "#EEF2FF" : "transparent",
+                    }}>
+                      <td style={{ padding: "10px 12px", fontWeight: r.method === "Ours" ? 700 : 500, color: r.method === "Ours" ? "#5C6AC4" : "#111827" }}>{r.method}</td>
+                      <td style={{ padding: "10px 12px", color: TEXT }}>{r.proximity}</td>
+                      <td style={{ padding: "10px 12px", color: TEXT }}>{r.plausibility}</td>
+                      <td style={{ padding: "10px 12px", color: TEXT }}>{r.solver}</td>
+                      <td style={{ padding: "10px 12px", color: TEXT }}>{r.models}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </FadeIn>
+      </section>
+
+      <Divider />
+
+      {/* ─── Results ─── */}
+      <section style={{ paddingBottom: 56 }}>
+        <FadeIn>
+          <SectionTitle tag="Results" tagColor={AMBER}
+            title="Validity comparison"
+            subtitle="Percentage of counterfactuals that successfully flip the model's prediction across three benchmark datasets."
+          />
+        </FadeIn>
+
+        <FadeIn delay={0.1}>
+          {/* Model toggle */}
+          <div style={{ display: "flex", gap: 0, marginBottom: 24, background: "#F3F4F6", borderRadius: 8, padding: 3, width: "fit-content" }}>
+            <button onClick={() => setModel("lr")} style={{
+              padding: "8px 20px", borderRadius: 6, fontSize: 13, fontWeight: 600,
+              background: model === "lr" ? "#fff" : "transparent",
+              color: model === "lr" ? "#5C6AC4" : MUTED,
+              boxShadow: model === "lr" ? "0 1px 3px rgba(0,0,0,0.1)" : "none",
+              transition: "all 0.2s",
+            }}>
+              Logistic Regression
+            </button>
+            <button onClick={() => setModel("mlp")} style={{
+              padding: "8px 20px", borderRadius: 6, fontSize: 13, fontWeight: 600,
+              background: model === "mlp" ? "#fff" : "transparent",
+              color: model === "mlp" ? "#5C6AC4" : MUTED,
+              boxShadow: model === "mlp" ? "0 1px 3px rgba(0,0,0,0.1)" : "none",
+              transition: "all 0.2s",
+            }}>
+              Neural Network (MLP)
+            </button>
+          </div>
+
+          {/* Bar chart */}
+          <div style={{ background: CARD, border: `1px solid ${BORDER}`, borderRadius: 12, padding: "24px 16px" }}>
+            <ResponsiveContainer width="100%" height={320}>
+              <BarChart data={chartData} barCategoryGap="20%">
+                <XAxis dataKey="dataset" tick={{ fill: TEXT, fontSize: 12 }} axisLine={{ stroke: BORDER }} tickLine={false} />
+                <YAxis domain={[0, 100]} tick={{ fill: MUTED, fontSize: 11 }} axisLine={{ stroke: BORDER }} tickLine={false} label={{ value: "Validity (%)", angle: -90, position: "insideLeft", fill: MUTED, fontSize: 12 }} />
+                <Tooltip contentStyle={{ background: "#1F2937", border: "none", borderRadius: 8, color: "#fff", fontSize: 12 }} itemStyle={{ color: "#fff" }} labelStyle={{ color: "#D1D5DB", fontWeight: 600, marginBottom: 4 }} />
+                <Legend wrapperStyle={{ fontSize: 12 }} />
+                {chartKeys.map(key => (
+                  <Bar key={key} dataKey={key} fill={chartColors[key]} radius={[4, 4, 0, 0]} />
+                ))}
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+
+          {/* Key finding for MLP */}
+          {model === "mlp" && (
+            <div style={{
+              marginTop: 20, background: "#EEF2FF", border: "1px solid #C7D2FE",
+              borderRadius: 10, padding: "16px 20px",
+            }}>
+              <div style={{ fontWeight: 700, color: "#5C6AC4", fontSize: 14, marginBottom: 6 }}>
+                {"\uD83D\uDD11"} Key finding
+              </div>
+              <p style={{ color: TEXT, fontSize: 13, lineHeight: 1.6 }}>
+                TLPS and DACE validity <strong>drops massively</strong> when switching from Logistic Regression to MLP
+                (e.g., German Credit: 74% {"\u2192"} 31%), because their integer-programming constraints are designed for linear models.
+                Our DQCP approach maintains <strong>~70% validity</strong>, demonstrating true model flexibility.
+              </p>
+            </div>
+          )}
+        </FadeIn>
+      </section>
+
+      <div style={{ borderTop: `1px solid ${BORDER}`, padding: "24px 0", textAlign: "center", color: MUTED, fontSize: 12 }}>
+        Counterfactual Explanations via Conic Optimization &mdash; IEEE ICAC 2025
+      </div>
+    </div>
+  );
+}
+
+// ══════════════════════════════════════════════
 // ─── MAIN APP WITH PROJECT SWITCHER ───
 // ══════════════════════════════════════════════
 
@@ -1269,6 +1762,7 @@ const PROJECTS = [
   { id: "dualgraphshm", label: "DualGraph SHM", color: "#F87171", tagline: "Structural Damage" },
   { id: "mitacs",      label: "Mitacs Leak",     color: GREEN,  tagline: "CO\u2082 Refrigeration" },
   { id: "necfe",       label: "NE-CFE",         color: PURPLE, tagline: "Counterfactual XAI" },
+  { id: "cfconic",     label: "CF Conic",       color: "#5C6AC4", tagline: "Counterfactual XAI" },
   { id: "indoornav",   label: "Indoor Nav",     color: CYAN,   tagline: "Visually Impaired" },
   { id: "ergomate",    label: "Ergomate",       color: AMBER,  tagline: "IoT Office System" },
 ];
@@ -1279,6 +1773,7 @@ const PROJECT_COMPONENTS = {
   dualgraphshm: DualGraphSHMProject,
   mitacs: MitacsProject,
   necfe: NECFEProject,
+  cfconic: CFConicProject,
   indoornav: IndoorNavProject,
   ergomate: ErgomateProject,
 };
