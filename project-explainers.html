@@ -1026,86 +1026,14 @@ function DualGraphSHMProject() {
 }
 
 // ══════════════════════════════════════════════
-// ─── MITACS LEAK DETECTION ───
+// ─── MITACS LEAK DETECTION (redirects to standalone page) ───
 // ══════════════════════════════════════════════
 
 function MitacsProject() {
+  useEffect(() => { window.location.href = "/leak-detection.html"; }, []);
   return (
-    <div>
-      <section style={{ paddingTop: 64, paddingBottom: 48 }}>
-        <FadeIn>
-          <div style={{ display: "flex", gap: 8, marginBottom: 20, flexWrap: "wrap" }}>
-            <Tag color={GREEN}>Industry Deployment</Tag>
-            <Tag color={GOLD}>GNN</Tag>
-            <Tag color={BLUE}>Anomaly Detection</Tag>
-            <Tag color={PURPLE}>XAI</Tag>
-          </div>
-          <h1 style={{ fontFamily: "'Playfair Display', Georgia, serif", fontSize: "clamp(32px, 5vw, 50px)", fontWeight: 900, color: "#fff", lineHeight: 1.1, margin: "0 0 16px" }}>
-            CO&#8322; Refrigeration Leak Detection
-          </h1>
-          <p style={{ fontSize: "clamp(16px, 2.2vw, 20px)", color: TEXT, lineHeight: 1.5, maxWidth: 700, margin: "0 0 8px" }}>
-            Spatio-temporal GNN for incipient and catastrophic leak detection in supermarket CO&#8322; refrigeration systems with counterfactual explainability.
-          </p>
-          <p style={{ color: MUTED, fontSize: 14, margin: "0 0 32px" }}>Phase II Mitacs Project with Neelands Group &mdash; Western University</p>
-          <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
-            <a href="https://doi.org/10.3390/en17030736" target="_blank" rel="noopener" style={{ display: "inline-flex", alignItems: "center", gap: 8, padding: "12px 28px", borderRadius: 8, fontSize: 14, fontWeight: 600, background: GREEN, color: "#0A0E17", textDecoration: "none" }}>Read Paper</a>
-          </div>
-        </FadeIn>
-        <div style={{ display: "flex", gap: 14, flexWrap: "wrap", marginTop: 40 }}>
-          <StatCard value="Phase II" label="Mitacs Accelerate" color={GREEN} delay={0.1} />
-          <StatCard value="CO\u2082" label="Refrigerant System" color={BLUE} delay={0.2} />
-          <StatCard value="GNN" label="Spatio-Temporal" color={GOLD} delay={0.3} />
-          <StatCard value="XAI" label="Counterfactual" color={PURPLE} delay={0.4} />
-        </div>
-      </section>
-
-      <Divider />
-
-      <section style={{ paddingBottom: 56 }}>
-        <FadeIn><SectionTitle tag="Challenge" tagColor={RED} title="Why refrigerant leak detection is hard" subtitle="CO\u2082 refrigeration systems in supermarkets have complex multi-zone architectures where leaks are subtle and costly." /></FadeIn>
-        <CardGrid>
-          <FadeIn delay={0.1}><InfoCard icon={"\u2744\uFE0F"} title="Incipient Leaks" desc="Small, slow leaks that gradually degrade system performance. Traditional threshold-based alarms miss them entirely until significant refrigerant loss occurs." /></FadeIn>
-          <FadeIn delay={0.2}><InfoCard icon={"\uD83D\uDCA5"} title="Catastrophic Failures" desc="Sudden, large-scale leaks that can cause system shutdown, product loss, and safety hazards. Early detection of precursor patterns is critical." /></FadeIn>
-          <FadeIn delay={0.3}><InfoCard icon={"\uD83D\uDD17"} title="Sensor Interdependencies" desc="Dozens of interconnected sensors (temperature, pressure, flow) across compressors, condensers, and display cases. Faults propagate through the sensor graph." /></FadeIn>
-        </CardGrid>
-      </section>
-
-      <Divider />
-
-      <section style={{ paddingBottom: 56 }}>
-        <FadeIn><SectionTitle tag="Approach" tagColor={GOLD} title="Graph-based fault detection pipeline" subtitle="Model inter-sensor relationships as a dynamic graph and detect anomalies through changes in graph topology and node behavior." /></FadeIn>
-        <CardGrid minWidth={220}>
-          {[
-            { icon: "\uD83D\uDCCA", title: "Dynamic Graph Construction", desc: "Sensors as nodes, learned attention-based edges. Graph structure evolves over time to capture changing dependencies.", color: GOLD },
-            { icon: "\u23F1", title: "Temporal Modeling", desc: "GRU-based encoders capture per-sensor temporal dynamics within sliding windows of sensor readings.", color: BLUE },
-            { icon: "\uD83D\uDD0D", title: "Counterfactual Explanations", desc: "Generate minimal perturbations that change the model's prediction, revealing which sensor relationships drive each fault detection.", color: PURPLE },
-            { icon: "\u2601\uFE0F", title: "Azure Deployment", desc: "Production pipeline deployed on Azure cloud infrastructure for real-time monitoring of Neelands Group refrigeration systems.", color: CYAN },
-          ].map(c => (
-            <FadeIn key={c.title} delay={0.1}>
-              <div style={{ background: CARD, border: `1px solid ${BORDER}`, borderRadius: 10, padding: 20 }}>
-                <div style={{ fontSize: 22, marginBottom: 8 }}>{c.icon}</div>
-                <div style={{ color: c.color, fontWeight: 700, fontSize: 14, marginBottom: 6 }}>{c.title}</div>
-                <div style={{ color: TEXT, fontSize: 13, lineHeight: 1.6 }}>{c.desc}</div>
-              </div>
-            </FadeIn>
-          ))}
-        </CardGrid>
-      </section>
-
-      <Divider />
-
-      <section style={{ paddingBottom: 56 }}>
-        <FadeIn><SectionTitle tag="Stack" tagColor={CYAN} title="Technical foundation" /></FadeIn>
-        <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-          {["Python", "PyTorch", "PyG", "CatBoost", "Time-Series", "Azure"].map(t => (
-            <Tag key={t} color={BLUE}>{t}</Tag>
-          ))}
-        </div>
-      </section>
-
-      <div style={{ borderTop: `1px solid ${BORDER}`, padding: "24px 0", textAlign: "center", color: MUTED, fontSize: 12 }}>
-        Mitacs CO&#8322; Refrigeration Leak Detection &mdash; Published in Energies (2024) &middot; <a href="https://doi.org/10.3390/en17030736" target="_blank" rel="noopener" style={{ color: CYAN }}>DOI</a>
-      </div>
+    <div style={{ paddingTop: 120, textAlign: "center" }}>
+      <p style={{ color: MUTED, fontSize: 16 }}>Redirecting to the full Leak Detection portfolio...</p>
     </div>
   );
 }

@@ -1,0 +1,2330 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Refrigerant Leak Detection | Rashinda Wijethunga</title>
+<meta name="description" content="Production leak detection pipeline for supermarket CO2 refrigeration — from CatBoost + SHAP to multi-detector voting with state machine escalation.">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Refrigerant Leak Detection — From CatBoost to Multi-Detector Voting">
+<meta property="og:description" content="Production leak detection pipeline deployed across Canadian supermarkets via Mitacs Accelerate.">
+<meta property="og:image" content="https://rashindaw.github.io/assets/img/profile.jpg">
+<meta property="og:url" content="https://rashindaw.github.io/leak-detection.html">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Refrigerant Leak Detection — Rashinda Wijethunga">
+<meta name="twitter:description" content="Production leak detection for CO2 refrigeration with CatBoost, multi-detector voting, and state machine escalation.">
+<meta name="twitter:image" content="https://rashindaw.github.io/assets/img/profile.jpg">
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=IBM+Plex+Mono:wght@400;500;600&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0A0E17;
+    --bg2: #0F1420;
+    --surface: #151B2B;
+    --surface2: #1A2236;
+    --border: #1E2A42;
+    --border-hi: #2A3A5C;
+    --text: #C4CDE0;
+    --muted: #5A6A8A;
+    --white: #EDF0F7;
+    --cyan: #38BDF8;
+    --cyan-dim: #1B6B9A;
+    --green: #34D399;
+    --amber: #FBBF24;
+    --red: #F87171;
+    --purple: #A78BFA;
+    --orange: #FB923C;
+    --critical: #C084FC;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Outfit', sans-serif;
+    line-height: 1.6;
+    overflow-x: hidden;
+  }
+
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(var(--border) 1px, transparent 1px),
+      linear-gradient(90deg, var(--border) 1px, transparent 1px);
+    background-size: 60px 60px;
+    opacity: 0.12;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .wrapper {
+    position: relative;
+    z-index: 1;
+    max-width: 1080px;
+    margin: 0 auto;
+    padding: 0 28px;
+  }
+
+  /* HERO */
+  .hero {
+    padding: 80px 0 56px;
+    text-align: center;
+    position: relative;
+  }
+
+  .hero::after {
+    content: '';
+    position: absolute;
+    top: -100px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 600px;
+    height: 600px;
+    background: radial-gradient(circle, rgba(56,189,248,0.06) 0%, transparent 70%);
+    pointer-events: none;
+  }
+
+  .badge-row {
+    display: flex;
+    gap: 8px;
+    justify-content: center;
+    flex-wrap: wrap;
+    margin-bottom: 24px;
+  }
+
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 5px 14px;
+    border-radius: 100px;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    border: 1px solid;
+  }
+  .badge--cyan { color: var(--cyan); border-color: rgba(56,189,248,0.25); background: rgba(56,189,248,0.06); }
+  .badge--green { color: var(--green); border-color: rgba(52,211,153,0.25); background: rgba(52,211,153,0.06); }
+  .badge--amber { color: var(--amber); border-color: rgba(251,191,36,0.25); background: rgba(251,191,36,0.06); }
+  .badge--purple { color: var(--purple); border-color: rgba(167,139,250,0.25); background: rgba(167,139,250,0.06); }
+  .badge--red { color: var(--red); border-color: rgba(248,113,113,0.25); background: rgba(248,113,113,0.06); }
+
+  .hero h1 {
+    font-family: 'DM Serif Display', serif;
+    font-size: clamp(36px, 6vw, 64px);
+    color: var(--white);
+    line-height: 1.05;
+    letter-spacing: -0.02em;
+    margin-bottom: 6px;
+  }
+
+  .hero h1 span {
+    background: linear-gradient(135deg, var(--cyan) 0%, var(--green) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  .hero .subtitle {
+    font-size: 13px;
+    font-family: 'IBM Plex Mono', monospace;
+    color: var(--muted);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    margin-bottom: 20px;
+  }
+
+  .hero .desc {
+    font-size: 18px;
+    color: var(--text);
+    max-width: 680px;
+    margin: 0 auto 36px;
+    line-height: 1.7;
+    font-weight: 300;
+  }
+
+  .cta-row {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+
+  .cta {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 28px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    text-decoration: none;
+    transition: all 0.25s ease;
+    cursor: pointer;
+    border: none;
+  }
+
+  .cta--primary {
+    background: var(--cyan);
+    color: #0A0E17;
+  }
+  .cta--primary:hover { background: #7DD3FC; transform: translateY(-2px); box-shadow: 0 8px 30px rgba(56,189,248,0.2); }
+
+  .cta--ghost {
+    background: transparent;
+    color: var(--text);
+    border: 1px solid var(--border-hi);
+  }
+  .cta--ghost:hover { border-color: var(--cyan); color: var(--cyan); }
+
+  /* STATS ROW */
+  .stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 12px;
+    margin-bottom: 72px;
+  }
+
+  .stat {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 24px 16px;
+    text-align: center;
+    transition: border-color 0.3s;
+  }
+  .stat:hover { border-color: var(--border-hi); }
+
+  .stat__val {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 26px;
+    font-weight: 600;
+    line-height: 1;
+  }
+  .stat__label {
+    font-size: 11px;
+    color: var(--muted);
+    margin-top: 6px;
+    letter-spacing: 0.04em;
+  }
+
+  /* SECTIONS */
+  section { padding: 56px 0; }
+
+  .section-tag {
+    display: inline-block;
+    padding: 3px 12px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+    margin-bottom: 14px;
+  }
+
+  h2 {
+    font-family: 'DM Serif Display', serif;
+    font-size: clamp(28px, 4vw, 40px);
+    color: var(--white);
+    line-height: 1.15;
+    margin-bottom: 10px;
+  }
+
+  .section-sub {
+    color: var(--muted);
+    font-size: 15px;
+    max-width: 620px;
+    line-height: 1.6;
+    margin-bottom: 32px;
+  }
+
+  hr {
+    border: none;
+    border-top: 1px solid var(--border);
+    margin: 0;
+  }
+
+  /* PROBLEM CARDS */
+  .problem-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 16px;
+    margin-top: 8px;
+  }
+
+  .problem-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 28px 24px;
+    transition: border-color 0.3s, transform 0.3s;
+  }
+  .problem-card:hover { border-color: var(--border-hi); transform: translateY(-3px); }
+
+  .problem-card__icon { font-size: 28px; margin-bottom: 12px; }
+  .problem-card h3 { color: var(--white); font-size: 16px; font-weight: 700; margin-bottom: 8px; }
+  .problem-card p { color: var(--text); font-size: 14px; line-height: 1.65; }
+
+  /* ARCH DIAGRAM */
+  .arch-container {
+    background: #FAFBFC;
+    border-radius: 14px;
+    padding: 24px 16px;
+    border: 1px solid var(--border);
+    overflow-x: auto;
+  }
+
+  .arch-container svg { display: block; margin: 0 auto; }
+
+  .arch-caption {
+    color: var(--muted);
+    font-size: 12px;
+    text-align: center;
+    margin-top: 14px;
+    line-height: 1.6;
+  }
+
+  /* DETECTOR CARDS */
+  .detector-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 14px;
+  }
+
+  .detector-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 22px 20px;
+    position: relative;
+    overflow: hidden;
+    transition: border-color 0.3s;
+  }
+  .detector-card:hover { border-color: var(--border-hi); }
+
+  .detector-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+  }
+
+  .detector-card--cusum::before { background: var(--cyan); }
+  .detector-card--ewma::before { background: var(--amber); }
+  .detector-card--rollz::before { background: var(--green); }
+  .detector-card--spike::before { background: var(--red); }
+
+  .detector-card__name {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 14px;
+    font-weight: 600;
+    margin-bottom: 4px;
+  }
+  .detector-card--cusum .detector-card__name { color: var(--cyan); }
+  .detector-card--ewma .detector-card__name { color: var(--amber); }
+  .detector-card--rollz .detector-card__name { color: var(--green); }
+  .detector-card--spike .detector-card__name { color: var(--red); }
+
+  .detector-card__param {
+    font-size: 11px;
+    color: var(--muted);
+    font-family: 'IBM Plex Mono', monospace;
+    margin-bottom: 10px;
+  }
+
+  .detector-card p { font-size: 13px; line-height: 1.6; color: var(--text); }
+
+  /* FORMULA */
+  .formula-block {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 14px 18px;
+    margin-top: 12px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    color: var(--cyan);
+    line-height: 1.8;
+    overflow-x: auto;
+  }
+
+  /* PIPELINE */
+  .pipeline-steps {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+  }
+
+  .pipeline-step {
+    display: flex;
+    gap: 20px;
+    align-items: flex-start;
+    position: relative;
+  }
+
+  .pipeline-step__marker {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    flex-shrink: 0;
+    width: 40px;
+  }
+
+  .pipeline-step__dot {
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    border: 2px solid var(--cyan);
+    background: var(--bg);
+    z-index: 1;
+    flex-shrink: 0;
+  }
+
+  .pipeline-step__line {
+    width: 2px;
+    flex: 1;
+    background: var(--border);
+    min-height: 30px;
+  }
+
+  .pipeline-step:last-child .pipeline-step__line { display: none; }
+
+  .pipeline-step__content {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 18px 20px;
+    flex: 1;
+    margin-bottom: 12px;
+    transition: border-color 0.3s;
+  }
+  .pipeline-step__content:hover { border-color: var(--border-hi); }
+
+  .pipeline-step__title {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--cyan);
+    margin-bottom: 4px;
+  }
+
+  .pipeline-step__desc {
+    font-size: 13px;
+    color: var(--text);
+    line-height: 1.6;
+  }
+
+  /* STATE MACHINE */
+  .sm-track {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    overflow-x: auto;
+    padding: 20px 0;
+  }
+
+  .sm-node {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    flex-shrink: 0;
+    min-width: 120px;
+  }
+
+  .sm-node__box {
+    width: 110px;
+    padding: 14px 8px;
+    border-radius: 10px;
+    text-align: center;
+    border: 2px solid;
+    font-weight: 700;
+    font-size: 13px;
+    letter-spacing: 0.04em;
+    transition: transform 0.3s;
+  }
+  .sm-node__box:hover { transform: scale(1.05); }
+
+  .sm-node--normal .sm-node__box  { color: var(--green); border-color: var(--green); background: rgba(52,211,153,0.08); }
+  .sm-node--watch .sm-node__box   { color: var(--amber); border-color: var(--amber); background: rgba(251,191,36,0.08); }
+  .sm-node--warning .sm-node__box { color: var(--orange); border-color: var(--orange); background: rgba(251,146,60,0.08); }
+  .sm-node--alert .sm-node__box   { color: var(--red); border-color: var(--red); background: rgba(248,113,113,0.08); }
+  .sm-node--crit .sm-node__box    { color: var(--critical); border-color: var(--critical); background: rgba(192,132,252,0.08); }
+
+  .sm-node__duration {
+    font-size: 10px;
+    color: var(--muted);
+    margin-top: 6px;
+    font-family: 'IBM Plex Mono', monospace;
+  }
+
+  .sm-arrow {
+    color: var(--muted);
+    font-size: 20px;
+    flex-shrink: 0;
+    padding: 0 4px;
+  }
+
+  .sm-arrow__label {
+    display: block;
+    font-size: 10px;
+    text-align: center;
+    color: var(--muted);
+    font-family: 'IBM Plex Mono', monospace;
+    white-space: nowrap;
+  }
+
+  /* TECH STACK */
+  .stack-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 12px;
+  }
+
+  .stack-item {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 20px 18px;
+    transition: border-color 0.3s;
+  }
+  .stack-item:hover { border-color: var(--border-hi); }
+
+  .stack-item__cat {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 6px;
+  }
+
+  .stack-item__name {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--white);
+    margin-bottom: 4px;
+  }
+
+  .stack-item__desc {
+    font-size: 12px;
+    color: var(--text);
+    line-height: 1.5;
+  }
+
+  /* === INTERACTIVE SIMULATOR === */
+  .sim-container {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 28px 24px;
+    overflow: hidden;
+  }
+
+  .sim-controls {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-bottom: 20px;
+    align-items: center;
+  }
+
+  .sim-btn {
+    padding: 8px 20px;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    border: 1px solid var(--border-hi);
+    background: var(--bg2);
+    color: var(--text);
+    font-family: 'Outfit', sans-serif;
+    transition: all 0.2s;
+  }
+  .sim-btn:hover { border-color: var(--cyan); color: var(--cyan); }
+  .sim-btn.active { background: var(--cyan); color: #0A0E17; border-color: var(--cyan); }
+
+  .sim-speed {
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    color: var(--muted);
+  }
+  .sim-speed input { width: 80px; accent-color: var(--cyan); }
+
+  .sim-display {
+    display: grid;
+    grid-template-columns: 1fr 300px;
+    gap: 16px;
+  }
+
+  @media (max-width: 780px) {
+    .sim-display { grid-template-columns: 1fr; }
+    .sim-speed { margin-left: 0; }
+  }
+
+  .sim-chart-area {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 12px;
+    position: relative;
+    min-height: 260px;
+  }
+
+  .sim-chart-area canvas {
+    width: 100%;
+    height: 240px;
+    display: block;
+  }
+
+  .sim-chart-label {
+    position: absolute;
+    top: 8px;
+    left: 14px;
+    font-size: 11px;
+    font-family: 'IBM Plex Mono', monospace;
+    color: var(--muted);
+  }
+
+  .sim-sidebar {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .sim-alert-box {
+    background: var(--bg);
+    border: 2px solid var(--green);
+    border-radius: 10px;
+    padding: 16px;
+    text-align: center;
+    transition: border-color 0.5s, background 0.5s;
+  }
+
+  .sim-alert-box__label {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 6px;
+  }
+
+  .sim-alert-box__level {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--green);
+    transition: color 0.5s;
+  }
+
+  .sim-alert-box__timer {
+    font-size: 11px;
+    color: var(--muted);
+    font-family: 'IBM Plex Mono', monospace;
+    margin-top: 4px;
+  }
+
+  .sim-detectors {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px;
+    flex: 1;
+  }
+
+  .sim-det-title {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 10px;
+  }
+
+  .sim-det-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+  }
+
+  .sim-det-row:last-child { margin-bottom: 0; }
+
+  .sim-det-name {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    color: var(--text);
+    width: 68px;
+    flex-shrink: 0;
+  }
+
+  .sim-det-bar {
+    flex: 1;
+    height: 14px;
+    background: var(--surface2);
+    border-radius: 4px;
+    overflow: hidden;
+    position: relative;
+  }
+
+  .sim-det-bar__fill {
+    height: 100%;
+    border-radius: 4px;
+    transition: width 0.3s ease, background 0.3s;
+    width: 0;
+  }
+
+  .sim-det-bar__thresh {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background: var(--red);
+    opacity: 0.7;
+  }
+
+  .sim-det-flag {
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: var(--surface2);
+    flex-shrink: 0;
+    transition: background 0.3s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 9px;
+  }
+
+  .sim-voting {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px;
+  }
+
+  .sim-voting__result {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 13px;
+    text-align: center;
+    color: var(--text);
+    margin-top: 6px;
+  }
+
+  .sim-family-row {
+    display: flex;
+    gap: 6px;
+    margin-top: 8px;
+  }
+
+  .sim-family-cell {
+    flex: 1;
+    text-align: center;
+    padding: 6px 4px;
+    border-radius: 6px;
+    background: var(--surface2);
+    transition: background 0.3s;
+  }
+
+  .sim-family-cell__name {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    color: var(--muted);
+    font-weight: 600;
+  }
+
+  .sim-family-cell__count {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    color: var(--text);
+    font-weight: 600;
+  }
+
+  /* RESULTS TABLE */
+  .results-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+    margin-top: 8px;
+  }
+
+  .results-table th {
+    text-align: left;
+    padding: 10px 12px;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: var(--muted);
+    border-bottom: 1px solid var(--border);
+  }
+
+  .results-table td {
+    padding: 10px 12px;
+    border-bottom: 1px solid var(--border);
+    color: var(--text);
+  }
+
+  .results-table tr:hover td { background: rgba(56,189,248,0.03); }
+
+  .results-table .val { font-family: 'IBM Plex Mono', monospace; font-weight: 600; }
+
+  .pill {
+    display: inline-block;
+    padding: 2px 10px;
+    border-radius: 100px;
+    font-size: 11px;
+    font-weight: 600;
+  }
+  .pill--green { color: var(--green); background: rgba(52,211,153,0.12); }
+  .pill--amber { color: var(--amber); background: rgba(251,191,36,0.12); }
+  .pill--red   { color: var(--red); background: rgba(248,113,113,0.12); }
+
+  /* FOOTER */
+  .footer {
+    border-top: 1px solid var(--border);
+    padding: 32px 0 48px;
+    text-align: center;
+    color: var(--muted);
+    font-size: 13px;
+  }
+
+  .footer a { color: var(--cyan); text-decoration: none; }
+  .footer a:hover { text-decoration: underline; }
+
+  /* ANIMATIONS */
+  .fade-up {
+    opacity: 0;
+    transform: translateY(28px);
+    transition: opacity 0.6s cubic-bezier(0.22,1,0.36,1), transform 0.6s cubic-bezier(0.22,1,0.36,1);
+  }
+  .fade-up.visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  /* ═══ TAB SYSTEM ═══ */
+  .phase-tabs {
+    display: flex;
+    gap: 0;
+    margin-bottom: 0;
+    border-bottom: 2px solid var(--border);
+  }
+  .phase-tab {
+    flex: 1;
+    padding: 16px 24px;
+    font-size: 14px;
+    font-weight: 700;
+    letter-spacing: 0.03em;
+    text-align: center;
+    color: var(--muted);
+    background: transparent;
+    border: none;
+    border-bottom: 3px solid transparent;
+    cursor: pointer;
+    transition: all 0.25s ease;
+    font-family: 'Outfit', sans-serif;
+    position: relative;
+  }
+  .phase-tab:hover { color: var(--white); background: rgba(255,255,255,0.03); }
+  .phase-tab.active {
+    color: var(--white);
+    border-bottom-color: var(--cyan);
+    background: rgba(56,189,248,0.04);
+  }
+  .phase-tab .tab-badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 100px;
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    margin-left: 8px;
+    vertical-align: middle;
+  }
+  .tab-badge--published { background: rgba(52,211,153,0.15); color: var(--green); }
+  .tab-badge--wip { background: rgba(56,189,248,0.15); color: var(--cyan); }
+  .tab-panel { display: none; padding-top: 32px; }
+  .tab-panel.active { display: block; }
+
+  /* ═══ ALGORITHM FLOW SVG ═══ */
+  .algo-svg-wrap {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px 12px;
+    margin: 24px 0;
+    overflow-x: auto;
+  }
+  .algo-svg-wrap svg { display: block; margin: 0 auto; }
+
+  .formula-box {
+    background: rgba(56,189,248,0.06);
+    border: 1px solid rgba(56,189,248,0.15);
+    border-radius: 8px;
+    padding: 16px 18px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    line-height: 1.8;
+    color: var(--text);
+    margin: 12px 0;
+  }
+
+  /* SKIP LINK */
+  .skip-link {
+    position: absolute; left: -9999px; top: auto;
+    width: 1px; height: 1px; overflow: hidden;
+    z-index: 100; padding: 8px 16px;
+    background: #111; color: #fff; font-size: 14px;
+    text-decoration: none; border-radius: 4px;
+  }
+  .skip-link:focus {
+    position: fixed; left: 16px; top: 16px;
+    width: auto; height: auto; overflow: visible;
+  }
+
+  /* SITE NAV */
+  .site-nav {
+    position: sticky; top: 0; z-index: 100;
+    background: rgba(8,10,14,0.92); backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--border);
+    padding: 0 28px; display: flex; align-items: center;
+    gap: 20px; height: 48px; font-size: 13px;
+  }
+  .site-nav a { color: var(--muted); text-decoration: none; font-weight: 600; transition: color 0.2s; }
+  .site-nav a:hover { color: var(--white); }
+  .site-nav__home { color: var(--white) !important; padding-right: 20px; border-right: 1px solid var(--border); }
+
+  @media (max-width: 640px) {
+    .wrapper { padding: 0 18px; }
+    .hero { padding: 56px 0 40px; }
+    .stats { grid-template-columns: repeat(2, 1fr); }
+    .sm-track { overflow-x: auto; padding-bottom: 10px; }
+    .phase-tab { padding: 12px 8px; font-size: 12px; }
+    .phase-tab .tab-badge { display: none; }
+    .site-nav { padding: 0 18px; gap: 14px; font-size: 12px; }
+  }
+</style>
+</head>
+<body>
+<a href="#main-content" class="skip-link">Skip to content</a>
+
+<nav class="site-nav">
+  <a href="/" class="site-nav__home">&larr; Home</a>
+  <a href="/projects.html">Projects</a>
+  <a href="/publications.html">Publications</a>
+  <a href="/blogs.html">Blogs</a>
+</nav>
+
+<div class="wrapper" id="main-content">
+
+  <!-- =========== HERO =========== -->
+  <header class="hero fade-up">
+    <div class="badge-row">
+      <span class="badge badge--cyan">Mitacs Research</span>
+      <span class="badge badge--green">CatBoost / XGBoost</span>
+      <span class="badge badge--amber">Anomaly Detection</span>
+      <span class="badge badge--purple">Real-Time Monitoring</span>
+      <span class="badge badge--red">Published — Energies 2024</span>
+    </div>
+    <p class="subtitle">Supermarket Refrigerant Leak Detection</p>
+    <h1><span>Smart Leak Detection</span></h1>
+    <p class="desc">
+      A two-phase research program with Neelands Group tackling refrigerant leak detection in supermarket refrigeration.
+      <strong>Phase 1</strong> (published, Energies 2024) introduced CatBoost-based detection for HFC systems.
+      <strong>Phase 2</strong> scales to CO2 systems with 162 subsystems, four parallel detectors, and a hysteresis state machine.
+    </p>
+    <div class="cta-row">
+      <a href="#phase1" class="cta cta--primary" onclick="event.preventDefault();document.querySelectorAll('.phase-tab')[0].click();">
+        Phase 1 — Published Paper
+      </a>
+      <a href="#phase2" class="cta cta--ghost" onclick="event.preventDefault();document.querySelectorAll('.phase-tab')[1].click();">
+        Phase 2 — CO2 System
+      </a>
+      <a href="#demo" class="cta cta--ghost" onclick="event.preventDefault();document.querySelectorAll('.phase-tab')[1].click();setTimeout(function(){document.getElementById('demo').scrollIntoView({behavior:'smooth'})},300);">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="5,3 19,12 5,21"/></svg>
+        Interactive Demo
+      </a>
+    </div>
+  </header>
+
+  <!-- ═══════════ TAB BAR ═══════════ -->
+  <div class="phase-tabs" style="margin-top:8px">
+    <button class="phase-tab active" onclick="switchTab('p1')">
+      Phase 1 — HFC Systems <span class="tab-badge tab-badge--published">PUBLISHED</span>
+    </button>
+    <button class="phase-tab" onclick="switchTab('p2')">
+      Phase 2 — CO2 Transcritical <span class="tab-badge tab-badge--wip">IN PROGRESS</span>
+    </button>
+  </div>
+
+  <!-- ════════════════════════════════════════════════════════ -->
+  <!--              PHASE 1 TAB — PUBLISHED PAPER              -->
+  <!-- ════════════════════════════════════════════════════════ -->
+  <div id="panel-p1" class="tab-panel active">
+
+    <section class="fade-up">
+      <div style="display:inline-flex;align-items:center;gap:10px;margin-bottom:18px">
+        <span class="badge badge--green">Published — Energies 2024</span>
+        <span style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--muted)">17, 736</span>
+      </div>
+      <h2>Precision Leak Detection in Supermarket Refrigeration Systems</h2>
+      <p class="section-sub">Integrating Categorical Gradient Boosting with Advanced Thresholding for HFC-based refrigeration.</p>
+      <p style="color:var(--muted);font-size:13px;margin-bottom:28px">
+        Rashinda Wijethunga, Hooman Nouraei, Craig Zych, Jagath Samarabandu, Ayan Sadhu<br>
+        <a href="https://doi.org/10.3390/en17030736" target="_blank" style="color:var(--cyan);text-decoration:none">doi.org/10.3390/en17030736</a> &middot; Open Access (CC BY)
+      </p>
+
+      <div class="stats" style="margin-bottom:36px">
+        <div class="stat"><div class="stat__val" style="color:var(--amber)">0.92</div><div class="stat__label">Slow Leak Avg F1</div></div>
+        <div class="stat"><div class="stat__val" style="color:var(--cyan)">1.00</div><div class="stat__label">Subcooling F1</div></div>
+        <div class="stat"><div class="stat__val" style="color:var(--green)">5 days</div><div class="stat__label">Avg Early Detection</div></div>
+        <div class="stat"><div class="stat__val" style="color:var(--red)">6</div><div class="stat__label">Target Features</div></div>
+        <div class="stat"><div class="stat__val" style="color:var(--purple)">3</div><div class="stat__label">Real Supermarkets</div></div>
+      </div>
+    </section>
+
+    <hr>
+
+    <!-- ═══ MOTIVATION ═══ -->
+    <section class="fade-up">
+      <span class="section-tag badge--amber">Motivation</span>
+      <h2>Why leak detection matters</h2>
+      <p class="section-sub">Supermarket refrigeration accounts for ~50% of total energy consumption. Leaks have severe economic and environmental consequences.</p>
+      <div class="problem-grid">
+        <div class="problem-card">
+          <div class="problem-card__icon">&#x1F4B8;</div>
+          <h3>$150K Annual Energy Cost</h3>
+          <p>Refrigeration costs ~1% of total sales, equal to the average net profit margin. A 10% energy reduction can double profits. Leak rates average 11% annually, spiking to 30%.</p>
+        </div>
+        <div class="problem-card">
+          <div class="problem-card__icon">&#x1F30D;</div>
+          <h3>Environmental Impact</h3>
+          <p>HFCs have atmospheric lifespans up to 14 years. Regulatory bodies worldwide (Kigali Amendment, EU F-gas) mandate stricter leak monitoring and repair timelines.</p>
+        </div>
+        <div class="problem-card">
+          <div class="problem-card__icon">&#x1F50D;</div>
+          <h3>Detection Gap</h3>
+          <p>Most existing AFDD methods depend on the refrigerant level sensor in the receiver tank, which is <strong>unavailable in most supermarkets</strong>. Many only address one leak type.</p>
+        </div>
+      </div>
+    </section>
+
+    <hr>
+
+    <!-- ═══ KEY CONTRIBUTIONS ═══ -->
+    <section class="fade-up">
+      <span class="section-tag badge--green">Contributions</span>
+      <h2>Three novel contributions</h2>
+      <p class="section-sub">A complete framework for both slow and catastrophic leak detection, independent of receiver-level sensors.</p>
+      <div class="problem-grid">
+        <div class="problem-card">
+          <div class="problem-card__icon">&#x1F50D;</div>
+          <h3>Dual Leak Detection</h3>
+          <p><strong>First framework to detect both slow and catastrophic leaks</strong> under a single system. These show contrasting behaviours requiring fundamentally different detection strategies.</p>
+        </div>
+        <div class="problem-card">
+          <div class="problem-card__icon">&#x2699;</div>
+          <h3>Receiver-Independent</h3>
+          <p>Uses only <strong>universally available parameters</strong>: COP, subcooling, superheat, mass flow rate, compression ratio, and energy consumption. No receiver-level sensor required.</p>
+        </div>
+        <div class="problem-card">
+          <div class="problem-card__icon">&#x1F6A8;</div>
+          <h3>False Alarm Mitigation</h3>
+          <p><strong>First leak detection solution for supermarkets with built-in false alarm mitigation</strong>, handling control mode transitions (defrost, heat reclaim, condenser splits) that mimic anomalies.</p>
+        </div>
+      </div>
+    </section>
+
+    <hr>
+
+    <!-- ═══ ALGORITHM ARCHITECTURE SVG ═══ -->
+    <section class="fade-up">
+      <span class="section-tag badge--cyan">Architecture</span>
+      <h2>Overall algorithm architecture</h2>
+      <p class="section-sub">Two parallel pipelines share a common CatBoost prediction backbone, with specialised anomaly detection for each leak type.</p>
+
+      <div class="algo-svg-wrap">
+        <svg viewBox="0 0 920 660" width="100%" style="max-width:920px" xmlns="http://www.w3.org/2000/svg" font-family="'Outfit','Segoe UI',sans-serif">
+          <defs>
+            <marker id="p1a" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6Z" fill="#555"/></marker>
+          </defs>
+
+          <!-- RAW DATASET -->
+          <rect x="340" y="10" width="240" height="36" rx="5" fill="#1E2A42" stroke="#2A3A5C"/>
+          <text x="460" y="33" text-anchor="middle" font-size="13" font-weight="700" fill="#EDF0F7">Raw Dataset</text>
+
+          <line x1="460" y1="46" x2="460" y2="66" stroke="#555" stroke-width="1.5" marker-end="url(#p1a)"/>
+
+          <!-- DATA PREPROCESSING -->
+          <rect x="340" y="70" width="240" height="36" rx="5" fill="#1E2A42" stroke="#2A3A5C"/>
+          <text x="460" y="93" text-anchor="middle" font-size="12" font-weight="600" fill="#EDF0F7">Data Preprocessing</text>
+
+          <line x1="460" y1="106" x2="460" y2="126" stroke="#555" stroke-width="1.5" marker-end="url(#p1a)"/>
+
+          <!-- IDENTIFICATION -->
+          <rect x="300" y="130" width="320" height="50" rx="5" fill="#1E2A42" stroke="#2A3A5C"/>
+          <text x="460" y="152" text-anchor="middle" font-size="11" font-weight="600" fill="#EDF0F7">Identification of Leak events,</text>
+          <text x="460" y="168" text-anchor="middle" font-size="11" font-weight="600" fill="#EDF0F7">Service dates, and Normal Operation</text>
+
+          <!-- Split into two branches -->
+          <line x1="460" y1="180" x2="460" y2="200" stroke="#555" stroke-width="1.5"/>
+          <line x1="230" y1="200" x2="690" y2="200" stroke="#555" stroke-width="1.5"/>
+          <line x1="230" y1="200" x2="230" y2="218" stroke="#555" stroke-width="1.5" marker-end="url(#p1a)"/>
+          <line x1="690" y1="200" x2="690" y2="218" stroke="#555" stroke-width="1.5" marker-end="url(#p1a)"/>
+
+          <!-- LEFT BRANCH: CATASTROPHIC (15 min) -->
+          <rect x="130" y="222" width="200" height="30" rx="4" fill="rgba(248,113,113,0.15)" stroke="rgba(248,113,113,0.4)"/>
+          <text x="230" y="242" text-anchor="middle" font-size="11" font-weight="700" fill="#F87171">15 min sampled data</text>
+
+          <line x1="230" y1="252" x2="230" y2="268" stroke="#555" stroke-width="1.5" marker-end="url(#p1a)"/>
+
+          <rect x="130" y="272" width="200" height="30" rx="4" fill="#1E2A42" stroke="#2A3A5C"/>
+          <text x="230" y="292" text-anchor="middle" font-size="11" font-weight="600" fill="#EDF0F7">Feature Engineering</text>
+
+          <line x1="230" y1="302" x2="230" y2="316" stroke="#555" stroke-width="1.5"/>
+
+          <!-- Train/Val/Test split -->
+          <rect x="82" y="320" width="68" height="28" rx="3" fill="#1E2A42" stroke="#38BDF8" stroke-width="1"/>
+          <text x="116" y="339" text-anchor="middle" font-size="9" font-weight="600" fill="#38BDF8">Train Set</text>
+          <rect x="158" y="320" width="68" height="28" rx="3" fill="#1E2A42" stroke="#FBBF24" stroke-width="1"/>
+          <text x="192" y="339" text-anchor="middle" font-size="9" font-weight="600" fill="#FBBF24">Val Set</text>
+          <rect x="234" y="320" width="68" height="28" rx="3" fill="#1E2A42" stroke="#F87171" stroke-width="1"/>
+          <text x="268" y="339" text-anchor="middle" font-size="9" font-weight="600" fill="#F87171">Test Set</text>
+
+          <line x1="116" y1="348" x2="188" y2="370" stroke="#555" stroke-width="1" stroke-dasharray="3 2"/>
+          <line x1="192" y1="348" x2="200" y2="370" stroke="#555" stroke-width="1" stroke-dasharray="3 2"/>
+          <line x1="268" y1="348" x2="230" y2="398" stroke="#555" stroke-width="1" marker-end="url(#p1a)"/>
+
+          <!-- CatBoost Catastrophic -->
+          <rect x="120" y="370" width="220" height="32" rx="5" fill="rgba(56,189,248,0.15)" stroke="rgba(56,189,248,0.4)"/>
+          <text x="230" y="391" text-anchor="middle" font-size="12" font-weight="700" fill="#38BDF8">CatBoost regressor model</text>
+
+          <line x1="230" y1="402" x2="230" y2="420" stroke="#555" stroke-width="1.5" marker-end="url(#p1a)"/>
+
+          <rect x="108" y="424" width="244" height="30" rx="4" fill="#1E2A42" stroke="#2A3A5C"/>
+          <text x="230" y="444" text-anchor="middle" font-size="10" font-weight="600" fill="#EDF0F7">Prediction Error for Target feature i</text>
+
+          <line x1="230" y1="454" x2="230" y2="472" stroke="#555" stroke-width="1.5" marker-end="url(#p1a)"/>
+
+          <!-- Dynamic Thresholding -->
+          <rect x="108" y="476" width="244" height="30" rx="4" fill="rgba(248,113,113,0.12)" stroke="rgba(248,113,113,0.35)"/>
+          <text x="230" y="496" text-anchor="middle" font-size="11" font-weight="700" fill="#F87171">Dynamic Thresholding algorithm</text>
+
+          <line x1="230" y1="506" x2="230" y2="524" stroke="#555" stroke-width="1.5" marker-end="url(#p1a)"/>
+
+          <!-- False Alarm Mitigation -->
+          <rect x="108" y="528" width="244" height="30" rx="4" fill="rgba(251,191,36,0.12)" stroke="rgba(251,191,36,0.35)"/>
+          <text x="230" y="548" text-anchor="middle" font-size="11" font-weight="700" fill="#FBBF24">Mitigating False positives</text>
+
+          <line x1="230" y1="558" x2="230" y2="576" stroke="#555" stroke-width="1.5" marker-end="url(#p1a)"/>
+
+          <!-- Catastrophic Detection -->
+          <rect x="108" y="580" width="244" height="36" rx="5" fill="rgba(248,113,113,0.2)" stroke="#F87171" stroke-width="1.5"/>
+          <text x="230" y="603" text-anchor="middle" font-size="12" font-weight="800" fill="#F87171">Catastrophic Leak detection</text>
+
+          <!-- RIGHT BRANCH: SLOW (1 hour) -->
+          <rect x="590" y="222" width="200" height="30" rx="4" fill="rgba(251,191,36,0.15)" stroke="rgba(251,191,36,0.4)"/>
+          <text x="690" y="242" text-anchor="middle" font-size="11" font-weight="700" fill="#FBBF24">1 hour sampled data</text>
+
+          <line x1="690" y1="252" x2="690" y2="268" stroke="#555" stroke-width="1.5" marker-end="url(#p1a)"/>
+
+          <rect x="590" y="272" width="200" height="30" rx="4" fill="#1E2A42" stroke="#2A3A5C"/>
+          <text x="690" y="292" text-anchor="middle" font-size="11" font-weight="600" fill="#EDF0F7">Feature Engineering</text>
+
+          <line x1="690" y1="302" x2="690" y2="316" stroke="#555" stroke-width="1.5"/>
+
+          <!-- Train/Val/Test slow -->
+          <rect x="542" y="320" width="68" height="28" rx="3" fill="#1E2A42" stroke="#38BDF8" stroke-width="1"/>
+          <text x="576" y="339" text-anchor="middle" font-size="9" font-weight="600" fill="#38BDF8">Train Set</text>
+          <rect x="618" y="320" width="68" height="28" rx="3" fill="#1E2A42" stroke="#FBBF24" stroke-width="1"/>
+          <text x="652" y="339" text-anchor="middle" font-size="9" font-weight="600" fill="#FBBF24">Val Set</text>
+          <rect x="694" y="320" width="68" height="28" rx="3" fill="#1E2A42" stroke="#F87171" stroke-width="1"/>
+          <text x="728" y="339" text-anchor="middle" font-size="9" font-weight="600" fill="#F87171">Test Set</text>
+
+          <line x1="576" y1="348" x2="650" y2="370" stroke="#555" stroke-width="1" stroke-dasharray="3 2"/>
+          <line x1="652" y1="348" x2="660" y2="370" stroke="#555" stroke-width="1" stroke-dasharray="3 2"/>
+          <line x1="728" y1="348" x2="690" y2="398" stroke="#555" stroke-width="1" marker-end="url(#p1a)"/>
+
+          <!-- CatBoost Slow -->
+          <rect x="580" y="370" width="220" height="32" rx="5" fill="rgba(56,189,248,0.15)" stroke="rgba(56,189,248,0.4)"/>
+          <text x="690" y="391" text-anchor="middle" font-size="12" font-weight="700" fill="#38BDF8">CatBoost regressor model</text>
+
+          <line x1="690" y1="402" x2="690" y2="420" stroke="#555" stroke-width="1.5" marker-end="url(#p1a)"/>
+
+          <rect x="568" y="424" width="244" height="30" rx="4" fill="#1E2A42" stroke="#2A3A5C"/>
+          <text x="690" y="444" text-anchor="middle" font-size="10" font-weight="600" fill="#EDF0F7">Prediction Error for Target feature i</text>
+
+          <line x1="690" y1="454" x2="690" y2="472" stroke="#555" stroke-width="1.5" marker-end="url(#p1a)"/>
+
+          <rect x="568" y="476" width="244" height="30" rx="4" fill="#1E2A42" stroke="#2A3A5C"/>
+          <text x="690" y="496" text-anchor="middle" font-size="10" font-weight="600" fill="#EDF0F7">Cumsum of squared prediction error</text>
+
+          <line x1="690" y1="506" x2="690" y2="520" stroke="#555" stroke-width="1.5" marker-end="url(#p1a)"/>
+
+          <rect x="548" y="524" width="284" height="30" rx="4" fill="#1E2A42" stroke="#2A3A5C"/>
+          <text x="690" y="544" text-anchor="middle" font-size="10" font-weight="600" fill="#EDF0F7">Bi-weekly diff of Cumsum (remove rapid)</text>
+
+          <line x1="690" y1="554" x2="690" y2="568" stroke="#555" stroke-width="1.5" marker-end="url(#p1a)"/>
+
+          <rect x="568" y="572" width="244" height="30" rx="4" fill="#1E2A42" stroke="#2A3A5C"/>
+          <text x="690" y="592" text-anchor="middle" font-size="10" font-weight="600" fill="#EDF0F7">Sample into daily values (last of day)</text>
+
+          <line x1="690" y1="602" x2="690" y2="616" stroke="#555" stroke-width="1.5" marker-end="url(#p1a)"/>
+
+          <rect x="608" y="620" width="164" height="30" rx="4" fill="rgba(251,191,36,0.12)" stroke="rgba(251,191,36,0.35)"/>
+          <text x="690" y="640" text-anchor="middle" font-size="11" font-weight="700" fill="#FBBF24">Threshold Value</text>
+
+          <line x1="690" y1="650" x2="690" y2="658" stroke="#555" stroke-width="1"/>
+
+          <!-- Slow Detection -->
+          <!-- Place below the visible area slightly to fit -->
+        </svg>
+      </div>
+      <p style="color:var(--muted);font-size:12px;text-align:center;margin-top:8px">
+        <strong>Fig. 4:</strong> Overall algorithm architecture for leak detection. Left branch handles catastrophic leaks (15-min data, dynamic thresholding). Right branch handles slow leaks (1-hour data, cumulative error analysis).
+      </p>
+    </section>
+
+    <hr>
+
+    <!-- ═══ DYNAMIC THRESHOLDING EXPLAINED ═══ -->
+    <section class="fade-up">
+      <span class="section-tag badge--red">Catastrophic Detection</span>
+      <h2>Non-parametric dynamic thresholding</h2>
+      <p class="section-sub">A CatBoost model predicts each target feature during normal operation. During a leak, prediction errors spike — the challenge is distinguishing genuine anomalies from noise.</p>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px">
+        <div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:22px">
+          <div style="color:var(--cyan);font-weight:700;font-size:13px;margin-bottom:10px">Step 1: Smoothed Error Series</div>
+          <p style="font-size:13px;line-height:1.7;color:var(--text)">Prediction errors e(t) = (y(t) &minus; &ycirc;(t))&sup2; are computed in real-time and smoothed using an exponentially weighted average to eliminate sharp spikes from noise.</p>
+          <div class="formula-box">e<sub>s</sub> = EWMA(e(t&minus;h), ..., e(t))</div>
+        </div>
+        <div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:22px">
+          <div style="color:var(--cyan);font-weight:700;font-size:13px;margin-bottom:10px">Step 2: Optimal Threshold Selection</div>
+          <p style="font-size:13px;line-height:1.7;color:var(--text)">A set of candidate thresholds &epsilon;(z<sub>i</sub>) = &mu;(e<sub>s</sub>) + z<sub>i</sub>&sigma;(e<sub>s</sub>) is generated for z ranging from 2 to 10. The optimal &epsilon;* maximises separation between normal and anomalous data.</p>
+          <div class="formula-box">&epsilon;* = argmax [&Delta;&mu;/&mu; + &Delta;&sigma;/&sigma;] / [|e<sub>a</sub>| + |E<sub>seq</sub>|&sup2;]</div>
+        </div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+        <div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:22px">
+          <div style="color:var(--amber);font-weight:700;font-size:13px;margin-bottom:10px">Step 3: Anomaly Scoring</div>
+          <p style="font-size:13px;line-height:1.7;color:var(--text)">All error values above &epsilon;* in continuous sequences E<sub>seq</sub> receive an anomaly severity score based on how far they exceed the threshold relative to the error statistics.</p>
+          <div class="formula-box">s<sup>(i)</sup> = [max(e<sub>seq</sub><sup>(i)</sup>) &minus; &epsilon;*] / [&mu;(e<sub>s</sub>) + &sigma;(e<sub>s</sub>)]</div>
+        </div>
+        <div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:22px">
+          <div style="color:var(--amber);font-weight:700;font-size:13px;margin-bottom:10px">Step 4: False Positive Mitigation</div>
+          <p style="font-size:13px;line-height:1.7;color:var(--text)">A pruning vector e<sub>max</sub> ranks anomalous subsequences by peak error. Walking through this vector, if the percentage decrease d<sub>i</sub> between consecutive peaks exceeds threshold p, earlier sequences are confirmed as true anomalies; the rest are reclassified as normal noise.</p>
+          <div class="formula-box">d<sub>i</sub> = (e<sub>max</sub><sup>i&minus;1</sup> &minus; e<sub>max</sub><sup>i</sup>) / e<sub>max</sub><sup>i&minus;1</sup><br>if d<sub>i</sub> &gt; p &rarr; confirm anomalies j &lt; i</div>
+        </div>
+      </div>
+    </section>
+
+    <hr>
+
+    <!-- ═══ SLOW LEAK EXPLAINED ═══ -->
+    <section class="fade-up">
+      <span class="section-tag badge--amber">Slow Leak Detection</span>
+      <h2>Cumulative error analysis for gradual leaks</h2>
+      <p class="section-sub">Slow leaks don't significantly affect system efficiency until substantial refrigerant has been lost. A fundamentally different detection strategy is needed.</p>
+
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:24px;margin-bottom:16px">
+        <div style="color:var(--amber);font-weight:700;font-size:14px;margin-bottom:12px">The Core Insight</div>
+        <p style="font-size:14px;line-height:1.7;color:var(--text);margin:0">
+          As the system enters a slow leak state, the partial correlation between input variables (X) and target variables (Y) shifts. 
+          The CatBoost model, trained on healthy data, produces a <strong>gradually increasing prediction error</strong> that accumulates over time.
+          The key innovation is tracking the <em>bi-weekly gradual rise</em> of cumulative squared errors while removing rapid spikes caused by noise.
+        </p>
+      </div>
+
+      <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(200px, 1fr));gap:12px">
+        <div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:18px">
+          <div style="color:var(--cyan);font-weight:700;font-size:12px;margin-bottom:6px">1. Predict COP</div>
+          <p style="font-size:12px;line-height:1.6;color:var(--text)">CatBoost predicts COP from 1-hour sampled data. Only COP responds to slow leaks.</p>
+        </div>
+        <div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:18px">
+          <div style="color:var(--cyan);font-weight:700;font-size:12px;margin-bottom:6px">2. Cumulative Sum</div>
+          <p style="font-size:12px;line-height:1.6;color:var(--text)">Squared errors are accumulated: C<sub>e&sup2;</sub>(t) = &Sigma;e&sup2;(t). Gradient change reveals leak onset.</p>
+        </div>
+        <div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:18px">
+          <div style="color:var(--cyan);font-weight:700;font-size:12px;margin-bottom:6px">3. Remove Rapid Shifts</div>
+          <p style="font-size:12px;line-height:1.6;color:var(--text)">&Delta;Rapid removed using gradient G(t) > &mu; + 3&sigma;. Only gradual, consistent accumulation retained.</p>
+        </div>
+        <div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:18px">
+          <div style="color:var(--cyan);font-weight:700;font-size:12px;margin-bottom:6px">4. Daily Threshold</div>
+          <p style="font-size:12px;line-height:1.6;color:var(--text)">D<sub>&Delta;Gradual</sub> resampled daily. Threshold T = 1.8 &times; max(validation) applied per store.</p>
+        </div>
+      </div>
+    </section>
+
+    <hr>
+
+    <!-- ═══ CATASTROPHIC RESULTS ═══ -->
+    <section class="fade-up">
+      <span class="section-tag badge--cyan">Results</span>
+      <h2>Detection performance</h2>
+      <p class="section-sub">Evaluated on real-world data from Canadian supermarkets with HFC refrigerant.</p>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:24px">
+        <div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:22px">
+          <div style="color:var(--red);font-weight:700;font-size:14px;margin-bottom:10px">&#x26A1; Catastrophic Leak (1 event)</div>
+          <p style="font-size:13px;line-height:1.7;color:var(--text)">
+            Refrigerant dropped from 40% to 30% within hours. Five of six target features showed clear anomaly signals. <strong>Subcooling temperature achieved perfect F1 = 1.0</strong>. Energy consumption (kW) showed no response, proving it is insufficient alone.
+          </p>
+        </div>
+        <div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:22px">
+          <div style="color:var(--amber);font-weight:700;font-size:14px;margin-bottom:10px">&#x1F422; Slow Leaks (3 events, 3 stores)</div>
+          <p style="font-size:13px;line-height:1.7;color:var(--text)">
+            Leaks persisted for weeks/months before manual detection. The algorithm detected them within an <strong>average of 5 days</strong>. Only COP responded; other features showed no gradual change. Average F1 = 0.92 across all stores.
+          </p>
+        </div>
+      </div>
+
+      <div style="overflow-x:auto">
+        <table class="results-table">
+          <thead><tr><th>Target Parameter</th><th>Precision</th><th>Recall</th><th>F1 Score</th></tr></thead>
+          <tbody>
+            <tr><td>Subcooling Temperature</td><td class="val">1.0000</td><td class="val">1.0000</td><td class="val" style="color:var(--green)">1.0000</td></tr>
+            <tr><td>Compression Ratio</td><td class="val">0.7894</td><td class="val">1.0000</td><td class="val" style="color:var(--cyan)">0.8824</td></tr>
+            <tr><td>COP</td><td class="val">0.9000</td><td class="val">0.6000</td><td class="val" style="color:var(--amber)">0.7200</td></tr>
+            <tr><td>Mass Flow Rate</td><td class="val">1.0000</td><td class="val">0.5333</td><td class="val">0.6957</td></tr>
+            <tr><td>Superheat Temperature</td><td class="val">0.3684</td><td class="val">0.4667</td><td class="val">0.4118</td></tr>
+            <tr><td>kW Value</td><td class="val">0.0000</td><td class="val">0.0000</td><td class="val" style="color:var(--red)">0.0000</td></tr>
+          </tbody>
+        </table>
+        <p style="color:var(--muted);font-size:11px;margin-top:8px;text-align:center">Catastrophic leak detection performance (point-adjusted F1 scores). Slow leak: COP F1 = 0.92 avg across 3 stores.</p>
+      </div>
+
+      <!-- Non-leak performance -->
+      <div style="margin-top:20px;overflow-x:auto">
+        <table class="results-table">
+          <thead><tr><th>Parameter</th><th>MAPE (%)</th><th>R&sup2; Score</th><th>False Alarm Rate (%)</th></tr></thead>
+          <tbody>
+            <tr><td>COP</td><td class="val">1.47</td><td class="val">0.877</td><td class="val" style="color:var(--green)">0.27</td></tr>
+            <tr><td>Subcooling</td><td class="val">&mdash;</td><td class="val">0.827</td><td class="val" style="color:var(--green)">0.13</td></tr>
+            <tr><td>Superheat</td><td class="val">1.38</td><td class="val">0.904</td><td class="val">0.40</td></tr>
+            <tr><td>Mass Flow Rate</td><td class="val">2.55</td><td class="val">0.802</td><td class="val">0.33</td></tr>
+            <tr><td>Compression Ratio</td><td class="val">1.27</td><td class="val">0.764</td><td class="val" style="color:var(--green)">0.10</td></tr>
+            <tr><td>kW Value</td><td class="val">2.13</td><td class="val">0.600</td><td class="val" style="color:var(--green)">0.10</td></tr>
+          </tbody>
+        </table>
+        <p style="color:var(--muted);font-size:11px;margin-top:8px;text-align:center">Prediction model &amp; anomaly detection performance during non-leak operation (low false alarm rates confirm robust calibration).</p>
+      </div>
+    </section>
+
+  </div><!-- end Phase 1 panel -->
+
+  <!-- ════════════════════════════════════════════════════════ -->
+  <!--              PHASE 2 TAB — CO2 SYSTEM                   -->
+  <!-- ════════════════════════════════════════════════════════ -->
+  <div id="panel-p2" class="tab-panel">
+
+    <section class="fade-up" style="padding-top:8px">
+      <div style="display:inline-flex;align-items:center;gap:10px;margin-bottom:18px">
+        <span class="badge badge--cyan">Phase 2 — In Progress</span>
+        <span style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--muted)">Residual-Based Multi-Detector Voting</span>
+      </div>
+      <h2>Scaling to CO2 Transcritical Refrigeration</h2>
+      <p class="section-sub">An intelligent anomaly detection system monitoring 162 subsystems with XGBoost residuals, four parallel detectors, and a hysteresis state machine.</p>
+
+      <div class="stats" style="margin-bottom:32px">
+        <div class="stat"><div class="stat__val" style="color:var(--cyan)">162</div><div class="stat__label">Subsystems Monitored</div></div>
+        <div class="stat"><div class="stat__val" style="color:var(--green)">4</div><div class="stat__label">Parallel Detectors</div></div>
+        <div class="stat"><div class="stat__val" style="color:var(--amber)">7.6M</div><div class="stat__label">Training Samples</div></div>
+        <div class="stat"><div class="stat__val" style="color:var(--purple)">0.936</div><div class="stat__label">R&sup2; Validation</div></div>
+        <div class="stat"><div class="stat__val" style="color:var(--red)">5</div><div class="stat__label">Alert Severity Levels</div></div>
+        <div class="stat"><div class="stat__val" style="color:var(--orange)">&lt;1%</div><div class="stat__label">False Positive Rate</div></div>
+      </div>
+    </section>
+
+    <hr>
+
+    <!-- =========== MOTIVATION =========== -->
+    <section class="fade-up">
+      <span class="section-tag badge--amber">Motivation</span>
+      <h2>Why automated leak detection?</h2>
+      <p class="section-sub">CO2 refrigerant leaks in commercial systems are costly, dangerous, and invisible to conventional monitoring.</p>
+    <div class="problem-grid">
+      <div class="problem-card">
+        <div class="problem-card__icon">&#x1F4B8;</div>
+        <h3>Massive Financial Loss</h3>
+        <p>A single leak event can lose 350&ndash;1,400+ lbs of CO2 refrigerant. The Neelands store has experienced 12 documented incidents in 3 years, each requiring emergency service calls and risking product spoilage.</p>
+      </div>
+      <div class="problem-card">
+        <div class="problem-card__icon">&#x1F50D;</div>
+        <h3>No Direct Leak Sensor</h3>
+        <p>Existing refrigerant-level sensors have limited coverage and unreliable readings. The system must infer leaks indirectly from operational telemetry &mdash; specifically from how valve positions deviate from expected behaviour.</p>
+      </div>
+      <div class="problem-card">
+        <div class="problem-card__icon">&#x26A1;</div>
+        <h3>Speed Saves Money</h3>
+        <p>Slow leaks can persist for weeks before manual detection. Every hour of earlier detection saves refrigerant, prevents compressor damage, and avoids food safety incidents from rising case temperatures.</p>
+      </div>
+    </div>
+  </section>
+
+  <hr>
+
+  <!-- =========== DATA PIPELINE =========== -->
+  <section class="fade-up">
+    <span class="section-tag badge--green">Data Pipeline</span>
+    <h2>From raw sensors to model-ready features</h2>
+    <p class="section-sub">A 6-step pipeline transforms 15-minute sensor readings into a panel dataset with 35 engineered features per subsystem.</p>
+
+    <div class="pipeline-steps">
+      <div class="pipeline-step">
+        <div class="pipeline-step__marker"><div class="pipeline-step__dot"></div><div class="pipeline-step__line"></div></div>
+        <div class="pipeline-step__content">
+          <div class="pipeline-step__title">Step 2b&ndash;2c &mdash; Merge &amp; Interpolate</div>
+          <div class="pipeline-step__desc">Merge subsystem data (CT, VPO for 168 units) with system-level features (environmental, pressure, power). Linear-interpolate Indoor Temp, Outdoor Temp, Indoor Humidity (7&ndash;10% missing, 99%+ gaps &le;1 hour).</div>
+        </div>
+      </div>
+      <div class="pipeline-step">
+        <div class="pipeline-step__marker"><div class="pipeline-step__dot"></div><div class="pipeline-step__line"></div></div>
+        <div class="pipeline-step__content">
+          <div class="pipeline-step__title">Step 3 &mdash; Anomaly Labeling</div>
+          <div class="pipeline-step__desc">Mark 12 known service-record periods as anomalous. Apply sensor-threshold rules (e.g., kW&lt;10, Pressure&lt;500) with &plusmn;1-hour buffers. Creates binary HealthLabel column for train/test filtering.</div>
+        </div>
+      </div>
+      <div class="pipeline-step">
+        <div class="pipeline-step__marker"><div class="pipeline-step__dot"></div><div class="pipeline-step__line"></div></div>
+        <div class="pipeline-step__content">
+          <div class="pipeline-step__title">Step 4 &mdash; Clean &amp; Filter</div>
+          <div class="pipeline-step__desc">Exclude 8 problematic subsystems (high missing data or sensor anomalies). Drop unused columns (power, pressure, PIDs). Interpolate small NaN gaps (&le;2 rows) in CT/VPO. 168 &rarr; 162 active subsystems.</div>
+        </div>
+      </div>
+      <div class="pipeline-step">
+        <div class="pipeline-step__marker"><div class="pipeline-step__dot"></div><div class="pipeline-step__line"></div></div>
+        <div class="pipeline-step__content">
+          <div class="pipeline-step__title">Step 5 &mdash; Feature Engineering</div>
+          <div class="pipeline-step__desc">Create 6 lag features per signal (1.5 hrs history) for CT, VPO, and 3 environmental columns. Add cyclical sin/cos encodings for hour, day-of-week, and month. Total: 35 features per subsystem-timestamp pair.</div>
+        </div>
+      </div>
+      <div class="pipeline-step">
+        <div class="pipeline-step__marker"><div class="pipeline-step__dot"></div><div class="pipeline-step__line"></div></div>
+        <div class="pipeline-step__content">
+          <div class="pipeline-step__title">Step 6 &mdash; Split &amp; Panelise</div>
+          <div class="pipeline-step__desc">Temporal split: Train (2022&ndash;2023), Val (Jan&ndash;Jun 2024), Test (Jun 2024+). Filter to "truly healthy" rows (current + 6 prior rows all healthy). Convert wide &rarr; panel format (one row per subsystem&times;timestamp). Final: 7.6M train, 1.9M val rows.</div>
+        </div>
+      </div>
+      <div class="pipeline-step">
+        <div class="pipeline-step__marker"><div class="pipeline-step__dot"></div><div class="pipeline-step__line"></div></div>
+        <div class="pipeline-step__content">
+          <div class="pipeline-step__title">Step 7 &mdash; Train XGBoost</div>
+          <div class="pipeline-step__desc">GPU-accelerated XGBoost regressor (depth=6, min_child=100, lr=0.05) trained on healthy-only data. Predicts VPO from CT + environmental + temporal features. Val R&sup2;=0.936, RMSE=3.80. VPO lags intentionally excluded to preserve anomaly sensitivity.</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <hr>
+
+  <!-- =========== ARCHITECTURE =========== -->
+  <section id="architecture" class="fade-up">
+    <span class="section-tag badge--cyan">Architecture</span>
+    <h2>Four-layer detection pipeline</h2>
+    <p class="section-sub">From raw predictions to system-level alerts: each layer progressively filters noise and increases confidence.</p>
+
+    <div class="arch-container">
+      <svg viewBox="0 0 900 620" width="100%" style="max-width:900px" xmlns="http://www.w3.org/2000/svg" font-family="'Outfit','Segoe UI',sans-serif">
+        <defs>
+          <marker id="arr" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+            <path d="M0,0 L8,3 L0,6Z" fill="#555"/>
+          </marker>
+        </defs>
+
+        <!-- LAYER 1 -->
+        <rect x="30" y="20" width="840" height="100" rx="10" fill="#F0F9FF" stroke="#38BDF8" stroke-width="1.5" stroke-dasharray="6 3"/>
+        <text x="50" y="44" font-size="11" font-weight="700" fill="#38BDF8" letter-spacing="0.08em">LAYER 1 &mdash; RESIDUAL COMPUTATION</text>
+
+        <rect x="60" y="56" width="180" height="46" rx="6" fill="#FFF" stroke="#333" stroke-width="1.2"/>
+        <text x="150" y="84" text-anchor="middle" font-size="13" font-weight="600" fill="#222">XGBoost Model</text>
+
+        <line x1="240" y1="79" x2="290" y2="79" stroke="#555" stroke-width="1.5" marker-end="url(#arr)"/>
+
+        <rect x="296" y="56" width="160" height="46" rx="6" fill="#FFF" stroke="#333" stroke-width="1.2"/>
+        <text x="376" y="84" text-anchor="middle" font-size="13" font-weight="600" fill="#222">Residual</text>
+        <text x="376" y="72" text-anchor="middle" font-size="10" fill="#888">VPO_actual - VPO_pred</text>
+
+        <line x1="456" y1="79" x2="510" y2="79" stroke="#555" stroke-width="1.5" marker-end="url(#arr)"/>
+
+        <rect x="516" y="56" width="160" height="46" rx="6" fill="#FFF" stroke="#333" stroke-width="1.2"/>
+        <text x="596" y="84" text-anchor="middle" font-size="13" font-weight="600" fill="#222">Z-Score</text>
+        <text x="596" y="72" text-anchor="middle" font-size="10" fill="#888">per-subsystem normalize</text>
+
+        <text x="750" y="84" text-anchor="middle" font-size="12" fill="#888">x162</text>
+
+        <!-- Arrow L1 -> L2 -->
+        <line x1="450" y1="120" x2="450" y2="150" stroke="#555" stroke-width="1.5" marker-end="url(#arr)"/>
+
+        <!-- LAYER 2 -->
+        <rect x="30" y="155" width="840" height="160" rx="10" fill="#FFFBF0" stroke="#FBBF24" stroke-width="1.5" stroke-dasharray="6 3"/>
+        <text x="50" y="179" font-size="11" font-weight="700" fill="#D97706" letter-spacing="0.08em">LAYER 2 &mdash; PER-SUBSYSTEM ANOMALY SCORING (x162)</text>
+
+        <!-- 4 Detector Boxes -->
+        <rect x="60" y="194" width="170" height="52" rx="6" fill="#FFF" stroke="#38BDF8" stroke-width="1.5"/>
+        <text x="145" y="215" text-anchor="middle" font-size="12" font-weight="700" fill="#38BDF8">CUSUM</text>
+        <text x="145" y="232" text-anchor="middle" font-size="10" fill="#888">bilateral + decay</text>
+
+        <rect x="250" y="194" width="170" height="52" rx="6" fill="#FFF" stroke="#D97706" stroke-width="1.5"/>
+        <text x="335" y="215" text-anchor="middle" font-size="12" font-weight="700" fill="#D97706">EWMA</text>
+        <text x="335" y="232" text-anchor="middle" font-size="10" fill="#888">&lambda;=0.1</text>
+
+        <rect x="440" y="194" width="170" height="52" rx="6" fill="#FFF" stroke="#059669" stroke-width="1.5"/>
+        <text x="525" y="215" text-anchor="middle" font-size="12" font-weight="700" fill="#059669">Rolling Z</text>
+        <text x="525" y="232" text-anchor="middle" font-size="10" fill="#888">24h window</text>
+
+        <rect x="630" y="194" width="170" height="52" rx="6" fill="#FFF" stroke="#DC2626" stroke-width="1.5"/>
+        <text x="715" y="215" text-anchor="middle" font-size="12" font-weight="700" fill="#DC2626">Spike</text>
+        <text x="715" y="232" text-anchor="middle" font-size="10" fill="#888">4&sigma; x 3 consecutive</text>
+
+        <!-- Converge lines to voting -->
+        <line x1="145" y1="246" x2="145" y2="264" stroke="#555" stroke-width="1"/>
+        <line x1="335" y1="246" x2="335" y2="264" stroke="#555" stroke-width="1"/>
+        <line x1="525" y1="246" x2="525" y2="264" stroke="#555" stroke-width="1"/>
+        <line x1="715" y1="246" x2="715" y2="264" stroke="#555" stroke-width="1"/>
+        <line x1="145" y1="264" x2="715" y2="264" stroke="#555" stroke-width="1"/>
+        <line x1="430" y1="264" x2="430" y2="278" stroke="#555" stroke-width="1.5" marker-end="url(#arr)"/>
+
+        <!-- Voting box -->
+        <rect x="340" y="282" width="180" height="24" rx="12" fill="#FFF" stroke="#333" stroke-width="1.2"/>
+        <text x="430" y="299" text-anchor="middle" font-size="12" font-weight="700" fill="#333">VOTE: &ge;2 of 4 agree</text>
+
+        <!-- Arrow L2 -> L3 -->
+        <line x1="450" y1="315" x2="450" y2="348" stroke="#555" stroke-width="1.5" marker-end="url(#arr)"/>
+
+        <!-- LAYER 3 -->
+        <rect x="30" y="352" width="840" height="100" rx="10" fill="#F0FFF4" stroke="#34D399" stroke-width="1.5" stroke-dasharray="6 3"/>
+        <text x="50" y="376" font-size="11" font-weight="700" fill="#059669" letter-spacing="0.08em">LAYER 3 &mdash; FAMILY AGGREGATION (x4 families)</text>
+
+        <!-- 4 Family boxes -->
+        <rect x="70" y="390" width="160" height="44" rx="6" fill="#FFF" stroke="#333" stroke-width="1.2"/>
+        <text x="150" y="411" text-anchor="middle" font-size="12" font-weight="600" fill="#222">SGrLT</text>
+        <text x="150" y="425" text-anchor="middle" font-size="9" fill="#888">36 freezers</text>
+
+        <rect x="250" y="390" width="160" height="44" rx="6" fill="#FFF" stroke="#333" stroke-width="1.2"/>
+        <text x="330" y="411" text-anchor="middle" font-size="12" font-weight="600" fill="#222">SGrMT</text>
+        <text x="330" y="425" text-anchor="middle" font-size="9" fill="#888">83 coolers</text>
+
+        <rect x="430" y="390" width="160" height="44" rx="6" fill="#FFF" stroke="#333" stroke-width="1.2"/>
+        <text x="510" y="411" text-anchor="middle" font-size="12" font-weight="600" fill="#222">SGrSC</text>
+        <text x="510" y="425" text-anchor="middle" font-size="9" fill="#888">9 subcoolers</text>
+
+        <rect x="610" y="390" width="160" height="44" rx="6" fill="#FFF" stroke="#333" stroke-width="1.2"/>
+        <text x="690" y="411" text-anchor="middle" font-size="12" font-weight="600" fill="#222">SGrTC</text>
+        <text x="690" y="425" text-anchor="middle" font-size="9" fill="#888">34 transcritical</text>
+
+        <text x="810" y="377" font-size="10" fill="#059669" font-weight="600">&gt;5% AND &ge;3 flagged</text>
+
+        <!-- Arrow L3 -> L4 -->
+        <line x1="450" y1="452" x2="450" y2="482" stroke="#555" stroke-width="1.5" marker-end="url(#arr)"/>
+
+        <!-- LAYER 4 -->
+        <rect x="30" y="486" width="840" height="110" rx="10" fill="#FFF5F5" stroke="#F87171" stroke-width="1.5" stroke-dasharray="6 3"/>
+        <text x="50" y="510" font-size="11" font-weight="700" fill="#DC2626" letter-spacing="0.08em">LAYER 4 &mdash; ALERT STATE MACHINE</text>
+
+        <!-- State boxes -->
+        <rect x="60" y="524" width="100" height="36" rx="18" fill="#D1FAE5" stroke="#059669" stroke-width="1.5"/>
+        <text x="110" y="547" text-anchor="middle" font-size="12" font-weight="700" fill="#059669">NORMAL</text>
+
+        <text x="185" y="544" text-anchor="middle" font-size="16" fill="#888">&rarr;</text>
+        <text x="185" y="558" text-anchor="middle" font-size="8" fill="#888">4h</text>
+
+        <rect x="210" y="524" width="100" height="36" rx="18" fill="#FEF3C7" stroke="#D97706" stroke-width="1.5"/>
+        <text x="260" y="547" text-anchor="middle" font-size="12" font-weight="700" fill="#D97706">WATCH</text>
+
+        <text x="335" y="544" text-anchor="middle" font-size="16" fill="#888">&rarr;</text>
+        <text x="335" y="558" text-anchor="middle" font-size="8" fill="#888">12h</text>
+
+        <rect x="360" y="524" width="110" height="36" rx="18" fill="#FFEDD5" stroke="#EA580C" stroke-width="1.5"/>
+        <text x="415" y="547" text-anchor="middle" font-size="12" font-weight="700" fill="#EA580C">WARNING</text>
+
+        <text x="495" y="544" text-anchor="middle" font-size="16" fill="#888">&rarr;</text>
+        <text x="495" y="558" text-anchor="middle" font-size="8" fill="#888">24h</text>
+
+        <rect x="520" y="524" width="100" height="36" rx="18" fill="#FEE2E2" stroke="#DC2626" stroke-width="1.5"/>
+        <text x="570" y="547" text-anchor="middle" font-size="12" font-weight="700" fill="#DC2626">ALERT</text>
+
+        <text x="645" y="544" text-anchor="middle" font-size="16" fill="#888">&rarr;</text>
+        <text x="645" y="558" text-anchor="middle" font-size="8" fill="#888">48h</text>
+
+        <rect x="670" y="524" width="110" height="36" rx="18" fill="#F3E8FF" stroke="#9333EA" stroke-width="1.5"/>
+        <text x="725" y="547" text-anchor="middle" font-size="12" font-weight="700" fill="#9333EA">CRITICAL</text>
+
+        <!-- Downgrade arrow -->
+        <path d="M 725 568 C 725 590 110 590 110 568" stroke="#888" stroke-width="1" fill="none" stroke-dasharray="4 3" marker-end="url(#arr)"/>
+        <text x="420" y="598" text-anchor="middle" font-size="9" fill="#888">downgrade one level after 6h unmet</text>
+      </svg>
+    </div>
+    <p class="arch-caption">
+      <strong>Fig. 1:</strong> Four-layer detection pipeline. <strong>Layer 1</strong> computes per-subsystem z-scored residuals from XGBoost predictions.
+      <strong>Layer 2</strong> runs four parallel detectors with majority voting. <strong>Layer 3</strong> aggregates flagged subsystems by refrigeration family.
+      <strong>Layer 4</strong> escalates alerts through a hysteresis state machine.
+    </p>
+  </section>
+
+  <hr>
+
+  <!-- =========== DETECTORS =========== -->
+  <section class="fade-up">
+    <span class="section-tag badge--purple">Detectors</span>
+    <h2>Four parallel anomaly detectors</h2>
+    <p class="section-sub">Each detector is tuned to catch a different leak profile. They vote together &mdash; a subsystem is flagged only when &ge;2 agree.</p>
+
+    <div class="detector-grid">
+      <div class="detector-card detector-card--cusum">
+        <div class="detector-card__name">Bilateral CUSUM</div>
+        <div class="detector-card__param">drift=0.5 &middot; decay=0.85 &middot; h=786</div>
+        <p>Accumulates deviations above a drift allowance. Catches <strong>slow, sustained leaks</strong> over hours/days. Exponential decay prevents stale accumulation after anomaly clears.</p>
+        <div class="formula-block">
+          S<sup>+</sup>[t] = max(0, S<sup>+</sup>[t-1] + z[t] - 0.5)<br>
+          S<sup>&minus;</sup>[t] = max(0, S<sup>&minus;</sup>[t-1] - z[t] - 0.5)<br>
+          if |z| &lt; 3: apply &times;0.85 decay
+        </div>
+      </div>
+      <div class="detector-card detector-card--ewma">
+        <div class="detector-card__name">EWMA</div>
+        <div class="detector-card__param">&lambda;=0.1 &middot; h=4.32</div>
+        <p>Exponentially weighted moving average with ~2.5-hour effective memory. Catches <strong>gradual trend changes</strong> that CUSUM might take longer to accumulate.</p>
+        <div class="formula-block">
+          EWMA[t] = 0.1 &middot; z[t] + 0.9 &middot; EWMA[t-1]<br>
+          flag if |EWMA| > 4.32
+        </div>
+      </div>
+      <div class="detector-card detector-card--rollz">
+        <div class="detector-card__name">Rolling Z-Score</div>
+        <div class="detector-card__param">window=96 (24h) &middot; h=1.94</div>
+        <p>Mean z-score over a 24-hour sliding window. Catches <strong>persistent subtle elevation</strong> that is individually small but collectively significant over a full day.</p>
+        <div class="formula-block">
+          rolling_z[t] = mean(z[t-95], ..., z[t])<br>
+          flag if |rolling_z| > 1.94
+        </div>
+      </div>
+      <div class="detector-card detector-card--spike">
+        <div class="detector-card__name">Spike Detector</div>
+        <div class="detector-card__param">4&sigma; &middot; 3 consecutive steps (45 min)</div>
+        <p>Fires when z-score exceeds 4&sigma; for 3+ consecutive timesteps. Catches <strong>sudden catastrophic events</strong> &mdash; pipe bursts, major valve failures, compressor shutdowns.</p>
+        <div class="formula-block">
+          if |z[t]| > 4.0 for 3 consecutive steps<br>
+          &rarr; spike_flagged = True
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <hr>
+
+  <!-- =========== INTERACTIVE DEMO =========== -->
+  <section id="demo" class="fade-up">
+    <span class="section-tag badge--red">Interactive Demo</span>
+    <h2>Leak detection simulator</h2>
+    <p class="section-sub">
+      Watch the detection pipeline respond in real time. Inject different leak types and see how
+      detectors, voting, and the state machine react. All four layers run live in your browser.
+    </p>
+
+    <div class="sim-container">
+      <div class="sim-controls">
+        <button class="sim-btn active" onclick="sim.setMode('normal')" id="btn-normal">Normal</button>
+        <button class="sim-btn" onclick="sim.setMode('slow')" id="btn-slow">Slow Leak</button>
+        <button class="sim-btn" onclick="sim.setMode('burst')" id="btn-burst">Sudden Burst</button>
+        <button class="sim-btn" onclick="sim.setMode('multi')" id="btn-multi">Multi-Family</button>
+        <button class="sim-btn" onclick="sim.reset()" id="btn-reset">Reset</button>
+        <div class="sim-speed">
+          <span>Speed</span>
+          <input type="range" min="1" max="10" value="5" id="sim-speed-slider" oninput="sim.setSpeed(this.value)">
+        </div>
+      </div>
+
+      <div class="sim-display">
+        <div>
+          <div class="sim-chart-area">
+            <span class="sim-chart-label">Z-SCORE SIGNAL (avg across affected subsystems)</span>
+            <canvas id="sim-canvas"></canvas>
+          </div>
+          <!-- Family grid below chart -->
+          <div style="margin-top:10px">
+            <div class="sim-family-row" id="sim-families">
+              <div class="sim-family-cell" id="fam-SGrLT"><div class="sim-family-cell__name">SGrLT</div><div class="sim-family-cell__count">0/36</div></div>
+              <div class="sim-family-cell" id="fam-SGrMT"><div class="sim-family-cell__name">SGrMT</div><div class="sim-family-cell__count">0/83</div></div>
+              <div class="sim-family-cell" id="fam-SGrSC"><div class="sim-family-cell__name">SGrSC</div><div class="sim-family-cell__count">0/9</div></div>
+              <div class="sim-family-cell" id="fam-SGrTC"><div class="sim-family-cell__name">SGrTC</div><div class="sim-family-cell__count">0/34</div></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="sim-sidebar">
+          <div class="sim-alert-box" id="sim-alert-box">
+            <div class="sim-alert-box__label">System Alert Level</div>
+            <div class="sim-alert-box__level" id="sim-alert-level">NORMAL</div>
+            <div class="sim-alert-box__timer" id="sim-alert-timer">0 steps in level</div>
+          </div>
+
+          <div class="sim-detectors">
+            <div class="sim-det-title">Detector States</div>
+            <div class="sim-det-row">
+              <span class="sim-det-name" style="color:var(--cyan)">CUSUM</span>
+              <div class="sim-det-bar"><div class="sim-det-bar__fill" id="det-cusum-bar" style="background:var(--cyan)"></div><div class="sim-det-bar__thresh" id="det-cusum-thresh" style="left:70%"></div></div>
+              <div class="sim-det-flag" id="det-cusum-flag"></div>
+            </div>
+            <div class="sim-det-row">
+              <span class="sim-det-name" style="color:var(--amber)">EWMA</span>
+              <div class="sim-det-bar"><div class="sim-det-bar__fill" id="det-ewma-bar" style="background:var(--amber)"></div><div class="sim-det-bar__thresh" id="det-ewma-thresh" style="left:70%"></div></div>
+              <div class="sim-det-flag" id="det-ewma-flag"></div>
+            </div>
+            <div class="sim-det-row">
+              <span class="sim-det-name" style="color:var(--green)">RollingZ</span>
+              <div class="sim-det-bar"><div class="sim-det-bar__fill" id="det-rollz-bar" style="background:var(--green)"></div><div class="sim-det-bar__thresh" id="det-rollz-thresh" style="left:70%"></div></div>
+              <div class="sim-det-flag" id="det-rollz-flag"></div>
+            </div>
+            <div class="sim-det-row">
+              <span class="sim-det-name" style="color:var(--red)">Spike</span>
+              <div class="sim-det-bar"><div class="sim-det-bar__fill" id="det-spike-bar" style="background:var(--red)"></div><div class="sim-det-bar__thresh" id="det-spike-thresh" style="left:70%"></div></div>
+              <div class="sim-det-flag" id="det-spike-flag"></div>
+            </div>
+          </div>
+
+          <div class="sim-voting">
+            <div class="sim-det-title">Voting &amp; Aggregation</div>
+            <div class="sim-voting__result" id="sim-vote-result">0/4 detectors active &mdash; not flagged</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <hr>
+
+  <!-- =========== RESULTS =========== -->
+  <section class="fade-up">
+    <span class="section-tag badge--green">Results</span>
+    <h2>Detection performance on historical events</h2>
+    <p class="section-sub">Evaluated on 8 real leak events from 2022&ndash;2025. The system detected all events, with time-to-detection ranging from hours to days depending on leak severity.</p>
+
+    <div style="overflow-x:auto">
+    <table class="results-table">
+      <thead>
+        <tr>
+          <th>Event</th>
+          <th>Period</th>
+          <th>Description</th>
+          <th>Severity</th>
+          <th>Peak Level</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="val">02</td>
+          <td>Mar&ndash;Jun 2022</td>
+          <td>Slow leak (~800 lb)</td>
+          <td><span class="pill pill--red">Major</span></td>
+          <td class="val" style="color:var(--critical)">CRITICAL</td>
+        </tr>
+        <tr>
+          <td class="val">04</td>
+          <td>Sep&ndash;Nov 2022</td>
+          <td>System #30 leak</td>
+          <td><span class="pill pill--amber">Moderate</span></td>
+          <td class="val" style="color:var(--red)">ALERT</td>
+        </tr>
+        <tr>
+          <td class="val">05</td>
+          <td>Dec 2022</td>
+          <td>Major leak (bakery)</td>
+          <td><span class="pill pill--red">Major</span></td>
+          <td class="val" style="color:var(--critical)">CRITICAL</td>
+        </tr>
+        <tr>
+          <td class="val">06</td>
+          <td>Apr&ndash;Jun 2023</td>
+          <td>Power outage + leaks</td>
+          <td><span class="pill pill--red">Severe</span></td>
+          <td class="val" style="color:var(--critical)">CRITICAL</td>
+        </tr>
+        <tr>
+          <td class="val">07</td>
+          <td>Aug 2023</td>
+          <td>Multi-day leak (350 lb)</td>
+          <td><span class="pill pill--amber">Moderate</span></td>
+          <td class="val" style="color:var(--red)">ALERT</td>
+        </tr>
+        <tr>
+          <td class="val">08</td>
+          <td>Dec 2023&ndash;Jan 2024</td>
+          <td>Suspicious activity</td>
+          <td><span class="pill pill--green">Mild</span></td>
+          <td class="val" style="color:var(--orange)">WARNING</td>
+        </tr>
+        <tr>
+          <td class="val">10</td>
+          <td>Jul 2024</td>
+          <td>Extended abnormal</td>
+          <td><span class="pill pill--amber">Moderate</span></td>
+          <td class="val" style="color:var(--red)">ALERT</td>
+        </tr>
+        <tr>
+          <td class="val">12</td>
+          <td>Dec 2024&ndash;Jan 2025</td>
+          <td>Suspicious activity</td>
+          <td><span class="pill pill--green">Mild</span></td>
+          <td class="val" style="color:var(--orange)">WARNING</td>
+        </tr>
+      </tbody>
+    </table>
+    </div>
+  </section>
+
+  <hr>
+
+  <!-- =========== KEY DECISIONS =========== -->
+  <section class="fade-up">
+    <span class="section-tag badge--amber">Design Decisions</span>
+    <h2>Why we built it this way</h2>
+    <p class="section-sub">Each architectural choice balances detection sensitivity, false-positive control, and operational practicality.</p>
+    <div class="problem-grid">
+      <div class="problem-card">
+        <div class="problem-card__icon">&#x1F3AF;</div>
+        <h3>Single Global Model</h3>
+        <p>One XGBoost model with sub_idx as a feature serves all 162 subsystems, sharing the CT&rarr;VPO physics while learning per-unit offsets. More data-efficient and maintainable than 162 separate models.</p>
+      </div>
+      <div class="problem-card">
+        <div class="problem-card__icon">&#x1F6AB;</div>
+        <h3>No VPO Lags</h3>
+        <p>Deliberately excludes autoregressive VPO features. During slow leaks, VPO lags would let the model &ldquo;explain away&rdquo; anomalous values, suppressing the residual signal. This sacrifices ~2 R&sup2; points for far better anomaly sensitivity.</p>
+      </div>
+      <div class="problem-card">
+        <div class="problem-card__icon">&#x1F5F3;</div>
+        <h3>Multi-Detector Voting</h3>
+        <p>Four detectors with different time horizons vote together. Requiring &ge;2/4 agreement dramatically reduces false positives while maintaining detection power across leak profiles (slow, sudden, sustained).</p>
+      </div>
+      <div class="problem-card">
+        <div class="problem-card__icon">&#x1F3E2;</div>
+        <h3>Family Aggregation</h3>
+        <p>Leaks affect shared piping, so multiple subsystems deviate together. The dual threshold (&gt;5% AND &ge;3 absolute) filters out single-unit faults while catching real leaks that propagate across families.</p>
+      </div>
+      <div class="problem-card">
+        <div class="problem-card__icon">&#x23F3;</div>
+        <h3>Hysteresis State Machine</h3>
+        <p>Escalation requires sustained conditions (4h&rarr;12h&rarr;24h&rarr;48h). The 6-hour downgrade delay prevents alert fatigue from oscillating borderline conditions. Fast-track triggers bypass timers for severe cases.</p>
+      </div>
+      <div class="problem-card">
+        <div class="problem-card__icon">&#x1F9EA;</div>
+        <h3>Healthy-Only Calibration</h3>
+        <p>Thresholds are calibrated at the 99th percentile of healthy-data statistics, never tuned on leak events. This preserves statistical validity of the FPR guarantee and ensures generalisation to novel leak patterns.</p>
+      </div>
+    </div>
+  </section>
+
+  <hr>
+
+  <!-- =========== TECH STACK =========== -->
+  <section class="fade-up">
+    <span class="section-tag badge--cyan">Stack</span>
+    <h2>Technical foundation</h2>
+    <p class="section-sub">Built with robust ML and data engineering libraries, GPU-accelerated training, and config-driven detection.</p>
+
+    <div class="stack-grid">
+      <div class="stack-item">
+        <div class="stack-item__cat">ML Model</div>
+        <div class="stack-item__name">XGBoost (GPU)</div>
+        <div class="stack-item__desc">Gradient-boosted regression trees with CUDA histogram splitting. 100K trees with early stopping, depth 6, aggressive regularisation.</div>
+      </div>
+      <div class="stack-item">
+        <div class="stack-item__cat">Data Processing</div>
+        <div class="stack-item__name">pandas + NumPy</div>
+        <div class="stack-item__desc">Vectorised residual computation, rolling-window detectors, and wide-to-panel format conversion for 7.6M+ rows.</div>
+      </div>
+      <div class="stack-item">
+        <div class="stack-item__cat">Visualisation</div>
+        <div class="stack-item__name">Plotly + Matplotlib</div>
+        <div class="stack-item__desc">Interactive Dash dashboards for exploration. Static matplotlib figures for stakeholder reports and publication-quality PDF exports.</div>
+      </div>
+      <div class="stack-item">
+        <div class="stack-item__cat">Unsupervised</div>
+        <div class="stack-item__name">Isolation Forest + PCA</div>
+        <div class="stack-item__desc">Optional unsupervised scoring layer on the residual vector for additional anomaly evidence beyond the four primary detectors.</div>
+      </div>
+      <div class="stack-item">
+        <div class="stack-item__cat">Configuration</div>
+        <div class="stack-item__name">JSON Config-Driven</div>
+        <div class="stack-item__desc">All detector parameters, voting rules, family weights, and state machine timings in detection_config.json &mdash; no hardcoded thresholds.</div>
+      </div>
+      <div class="stack-item">
+        <div class="stack-item__cat">Environment</div>
+        <div class="stack-item__name">Conda + CUDA</div>
+        <div class="stack-item__desc">Reproducible conda environment with GPU-accelerated training on NVIDIA hardware. Full pipeline from raw data to dashboard in numbered scripts.</div>
+      </div>
+    </div>
+  </section>
+
+  <hr>
+
+  <!-- =========== FUTURE WORK =========== -->
+  <section class="fade-up">
+    <span class="section-tag badge--amber">Roadmap</span>
+    <h2>What's next</h2>
+    <p class="section-sub">The detection engine is operational. Next steps focus on data quality, deployment, and expansion.</p>
+    <div class="problem-grid">
+      <div class="problem-card">
+        <div class="problem-card__icon">&#x1F4E1;</div>
+        <h3>Clean CT Data Recovery</h3>
+        <p>119/162 subsystems reported frozen CT values from Apr&ndash;Aug 2025 due to a data export issue. Obtaining clean CT data from alternative source will unlock full-period blind testing.</p>
+      </div>
+      <div class="problem-card">
+        <div class="problem-card__icon">&#x2601;&#xFE0F;</div>
+        <h3>Real-Time Deployment</h3>
+        <p>Deploy the online engine for live 15-minute monitoring with email/SMS alerting to facility managers. Current pipeline processes events retrospectively &mdash; next step is live streaming.</p>
+      </div>
+      <div class="problem-card">
+        <div class="problem-card__icon">&#x1F3EA;</div>
+        <h3>Multi-Store Generalisation</h3>
+        <p>Adapt the model to additional grocery stores with different system configurations. The single-model architecture with sub_idx embedding makes transfer learning straightforward.</p>
+      </div>
+    </div>
+  </section>
+
+  </div><!-- end Phase 2 panel -->
+
+  <!-- =========== FOOTER =========== -->
+  <footer class="footer">
+    <p>Supermarket Refrigerant Leak Detection &mdash; Mitacs Accelerate &middot; Neelands Group &middot; Western University</p>
+    <p style="margin-top:6px">Phase 1: <a href="https://doi.org/10.3390/en17030736" target="_blank" style="color:var(--cyan)">Energies 2024, 17, 736</a> &middot; Phase 2: Residual-Based Multi-Detector Voting System</p>
+    <div style="display:flex;justify-content:center;gap:16px;flex-wrap:wrap;margin-top:12px">
+      <a href="/projects.html" style="color:var(--cyan);font-weight:600;text-decoration:none">&larr; All Projects</a>
+      <a href="/project-explainers.html#dualstgf" style="color:var(--amber);font-weight:600;text-decoration:none">DualSTGF Explainer</a>
+      <a href="/project-explainers.html#ulma" style="color:var(--green);font-weight:600;text-decoration:none">ULMA</a>
+    </div>
+  </footer>
+
+</div>
+
+<script>
+// ===================================================================
+// TAB SWITCHING
+// ===================================================================
+function switchTab(tabId) {
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.phase-tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('panel-' + tabId).classList.add('active');
+  event.currentTarget.classList.add('active');
+  // Re-trigger fade-up animations in the newly visible panel
+  const panel = document.getElementById('panel-' + tabId);
+  panel.querySelectorAll('.fade-up').forEach(el => {
+    observer2.observe(el);
+  });
+  window.scrollTo({ top: panel.offsetTop - 80, behavior: 'smooth' });
+}
+// Handle anchor links to switch tabs
+document.addEventListener('DOMContentLoaded', function() {
+  const hash = window.location.hash;
+  if (hash === '#phase2' || hash === '#demo') {
+    const p2btn = document.querySelectorAll('.phase-tab')[1];
+    if (p2btn) { p2btn.click(); }
+  }
+});
+const observer2 = new IntersectionObserver((entries) => {
+  entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); });
+}, { threshold: 0.1 });
+
+// ===================================================================
+// INTERACTIVE LEAK DETECTION SIMULATOR
+// ===================================================================
+class LeakSimulator {
+  constructor(canvasId) {
+    this.canvas = document.getElementById(canvasId);
+    this.ctx = this.canvas.getContext('2d');
+    this.resize();
+    window.addEventListener('resize', () => this.resize());
+
+    // Families
+    this.families = {
+      SGrLT: { total: 36, flagged: 0 },
+      SGrMT: { total: 83, flagged: 0 },
+      SGrSC: { total: 9, flagged: 0 },
+      SGrTC: { total: 34, flagged: 0 },
+    };
+
+    // Detector state
+    this.cusumPos = 0;
+    this.cusumNeg = 0;
+    this.ewma = 0;
+    this.rollingBuf = [];
+    this.spikeCount = 0;
+
+    // Thresholds (normalised for display)
+    this.hCusum = 40;
+    this.hEwma = 4.32;
+    this.hRollZ = 1.94;
+    this.hSpike = 4.0;
+
+    // State machine
+    this.alertLevel = 0;  // 0=NORMAL, 1=WATCH, 2=WARNING, 3=ALERT, 4=CRITICAL
+    this.alertNames = ['NORMAL','WATCH','WARNING','ALERT','CRITICAL'];
+    this.alertColors = ['#34D399','#FBBF24','#FB923C','#F87171','#C084FC'];
+    this.timeCondMet = 0;
+    this.timeCondUnmet = 0;
+    this.timeInLevel = 0;
+
+    // Chart data
+    this.zHistory = [];
+    this.maxHistory = 200;
+
+    // Mode
+    this.mode = 'normal';
+    this.leakStep = 0;
+    this.step = 0;
+    this.speed = 5;
+    this.running = true;
+
+    this.tick();
+  }
+
+  resize() {
+    const rect = this.canvas.parentElement.getBoundingClientRect();
+    this.canvas.width = rect.width - 24;
+    this.canvas.height = 240;
+  }
+
+  setMode(mode) {
+    document.querySelectorAll('.sim-btn').forEach(b => b.classList.remove('active'));
+    const btn = document.getElementById('btn-' + mode);
+    if (btn) btn.classList.add('active');
+    if (mode !== this.mode) {
+      this.mode = mode;
+      this.leakStep = 0;
+    }
+  }
+
+  setSpeed(v) { this.speed = parseInt(v); }
+
+  reset() {
+    this.cusumPos = 0; this.cusumNeg = 0; this.ewma = 0;
+    this.rollingBuf = []; this.spikeCount = 0;
+    this.alertLevel = 0; this.timeCondMet = 0; this.timeCondUnmet = 0; this.timeInLevel = 0;
+    this.zHistory = []; this.step = 0; this.leakStep = 0;
+    this.mode = 'normal';
+    document.querySelectorAll('.sim-btn').forEach(b => b.classList.remove('active'));
+    document.getElementById('btn-normal').classList.add('active');
+    Object.keys(this.families).forEach(f => this.families[f].flagged = 0);
+    this.updateUI(0, false, false, false, false, 0);
+  }
+
+  generateZ() {
+    const noise = () => (Math.random() + Math.random() + Math.random() + Math.random() - 2) * 1.0;
+    let z = noise();
+
+    if (this.mode === 'slow') {
+      // Gradually increasing mean over ~60 steps
+      const drift = Math.min(this.leakStep * 0.06, 5.0);
+      z = noise() + drift;
+      this.leakStep++;
+    } else if (this.mode === 'burst') {
+      // Immediate large spike
+      if (this.leakStep < 3) {
+        z = noise();
+      } else {
+        z = 5.5 + Math.random() * 2;
+      }
+      this.leakStep++;
+    } else if (this.mode === 'multi') {
+      const drift = Math.min(this.leakStep * 0.08, 6.0);
+      z = noise() + drift;
+      this.leakStep++;
+    }
+
+    return z;
+  }
+
+  runDetectors(z) {
+    // CUSUM
+    this.cusumPos = Math.max(0, this.cusumPos + z - 0.5);
+    this.cusumNeg = Math.max(0, this.cusumNeg - z - 0.5);
+    if (Math.abs(z) < 3.0) {
+      this.cusumPos *= 0.85;
+      this.cusumNeg *= 0.85;
+    }
+    const cusumVal = Math.max(this.cusumPos, this.cusumNeg);
+    const cusumFlag = cusumVal > this.hCusum;
+
+    // EWMA
+    this.ewma = 0.1 * z + 0.9 * this.ewma;
+    const ewmaVal = Math.abs(this.ewma);
+    const ewmaFlag = ewmaVal > this.hEwma;
+
+    // Rolling Z
+    this.rollingBuf.push(z);
+    if (this.rollingBuf.length > 96) this.rollingBuf.shift();
+    let rollZVal = 0;
+    if (this.rollingBuf.length >= 10) {
+      const sum = this.rollingBuf.reduce((a, b) => a + b, 0);
+      rollZVal = Math.abs(sum / this.rollingBuf.length);
+    }
+    const rollZFlag = rollZVal > this.hRollZ;
+
+    // Spike
+    if (Math.abs(z) > this.hSpike) {
+      this.spikeCount++;
+    } else {
+      this.spikeCount = 0;
+    }
+    const spikeFlag = this.spikeCount >= 3;
+
+    const nActive = [cusumFlag, ewmaFlag, rollZFlag, spikeFlag].filter(Boolean).length;
+    const flagged = nActive >= 2;
+
+    return { cusumVal, ewmaVal, rollZVal, spikeVal: Math.abs(z), cusumFlag, ewmaFlag, rollZFlag, spikeFlag, nActive, flagged };
+  }
+
+  updateFamilies(flagged) {
+    const affected = {};
+    if (this.mode === 'normal') {
+      Object.keys(this.families).forEach(f => { this.families[f].flagged = 0; });
+    } else if (this.mode === 'slow' || this.mode === 'burst') {
+      // Affects SGrLT primarily
+      const frac = flagged ? Math.min(0.3 + this.leakStep * 0.005, 0.7) : 0;
+      this.families.SGrLT.flagged = Math.round(36 * frac);
+      this.families.SGrMT.flagged = Math.round(83 * frac * 0.3);
+      this.families.SGrSC.flagged = 0;
+      this.families.SGrTC.flagged = 0;
+    } else if (this.mode === 'multi') {
+      const frac = flagged ? Math.min(0.2 + this.leakStep * 0.004, 0.6) : 0;
+      this.families.SGrLT.flagged = Math.round(36 * frac);
+      this.families.SGrMT.flagged = Math.round(83 * frac);
+      this.families.SGrSC.flagged = Math.round(9 * frac * 0.5);
+      this.families.SGrTC.flagged = Math.round(34 * frac * 0.7);
+    }
+
+    // Count anomalous families
+    let nAnom = 0;
+    Object.values(this.families).forEach(f => {
+      const frac = f.flagged / f.total;
+      if (frac > 0.05 && f.flagged >= 3) nAnom++;
+    });
+    return nAnom;
+  }
+
+  updateStateMachine(nFamiliesAnom) {
+    const upgrade = nFamiliesAnom >= 1;
+
+    if (upgrade) {
+      this.timeCondMet++;
+      this.timeCondUnmet = 0;
+    } else {
+      this.timeCondMet = 0;
+      this.timeCondUnmet++;
+    }
+
+    let newLevel = this.alertLevel;
+
+    // Upgrade — use shorter durations for demo visibility
+    const thresholds = [8, 20, 36, 56]; // NORMAL->WATCH, WATCH->WARNING, etc.
+    const fastTriggers = [false, nFamiliesAnom >= 2, false, nFamiliesAnom >= 2];
+
+    if (this.alertLevel < 4) {
+      if (fastTriggers[this.alertLevel] || this.timeCondMet >= thresholds[this.alertLevel]) {
+        newLevel = this.alertLevel + 1;
+      }
+    }
+
+    // Downgrade
+    if (this.timeCondUnmet >= 12 && this.alertLevel > 0) {
+      newLevel = this.alertLevel - 1;
+      this.timeCondUnmet = 0;
+    }
+
+    if (newLevel !== this.alertLevel) {
+      if (newLevel < this.alertLevel) this.timeCondMet = 0;
+      this.alertLevel = newLevel;
+      this.timeInLevel = 1;
+    } else {
+      this.timeInLevel++;
+    }
+  }
+
+  updateUI(z, cusumFlag, ewmaFlag, rollZFlag, spikeFlag, nActive, det) {
+    // Alert box
+    const box = document.getElementById('sim-alert-box');
+    const lvl = document.getElementById('sim-alert-level');
+    const timer = document.getElementById('sim-alert-timer');
+    lvl.textContent = this.alertNames[this.alertLevel];
+    lvl.style.color = this.alertColors[this.alertLevel];
+    box.style.borderColor = this.alertColors[this.alertLevel];
+    timer.textContent = this.timeInLevel + ' steps in level';
+
+    // Detector bars
+    if (det) {
+      const setBar = (id, val, max, flag) => {
+        const bar = document.getElementById(id + '-bar');
+        const flagEl = document.getElementById(id + '-flag');
+        const pct = Math.min(val / max * 100, 100);
+        bar.style.width = pct + '%';
+        bar.style.background = flag ? 'var(--red)' : bar.style.background;
+        if (!flag) {
+          if (id === 'det-cusum') bar.style.background = 'var(--cyan)';
+          if (id === 'det-ewma') bar.style.background = 'var(--amber)';
+          if (id === 'det-rollz') bar.style.background = 'var(--green)';
+          if (id === 'det-spike') bar.style.background = 'var(--red)';
+        }
+        flagEl.style.background = flag ? 'var(--red)' : 'var(--surface2)';
+        flagEl.textContent = flag ? '!' : '';
+        flagEl.style.color = '#fff';
+        flagEl.style.fontWeight = '700';
+      };
+
+      setBar('det-cusum', det.cusumVal, this.hCusum * 1.5, cusumFlag);
+      setBar('det-ewma', det.ewmaVal, this.hEwma * 1.5, ewmaFlag);
+      setBar('det-rollz', det.rollZVal, this.hRollZ * 1.5, rollZFlag);
+      setBar('det-spike', det.spikeVal, this.hSpike * 1.5, spikeFlag);
+    }
+
+    // Voting
+    const voteEl = document.getElementById('sim-vote-result');
+    const flagged = nActive >= 2;
+    voteEl.innerHTML = nActive + '/4 detectors active &mdash; ' +
+      (flagged ? '<span style="color:var(--red);font-weight:700">FLAGGED</span>' : 'not flagged');
+
+    // Families
+    Object.keys(this.families).forEach(f => {
+      const cell = document.getElementById('fam-' + f);
+      const fam = this.families[f];
+      const count = cell.querySelector('.sim-family-cell__count');
+      count.textContent = fam.flagged + '/' + fam.total;
+      const frac = fam.flagged / fam.total;
+      const isAnom = frac > 0.05 && fam.flagged >= 3;
+      cell.style.background = isAnom ? 'rgba(248,113,113,0.2)' : 'var(--surface2)';
+      count.style.color = isAnom ? 'var(--red)' : 'var(--text)';
+    });
+  }
+
+  drawChart() {
+    const ctx = this.ctx;
+    const w = this.canvas.width;
+    const h = this.canvas.height;
+    ctx.clearRect(0, 0, w, h);
+
+    // Background
+    ctx.fillStyle = '#0A0E17';
+    ctx.fillRect(0, 0, w, h);
+
+    // Grid
+    ctx.strokeStyle = 'rgba(30,42,66,0.5)';
+    ctx.lineWidth = 1;
+    for (let y = 0; y <= h; y += h / 6) {
+      ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(w, y); ctx.stroke();
+    }
+
+    // Zero line
+    const midY = h / 2;
+    ctx.strokeStyle = 'rgba(90,106,138,0.4)';
+    ctx.setLineDash([4, 4]);
+    ctx.beginPath(); ctx.moveTo(0, midY); ctx.lineTo(w, midY); ctx.stroke();
+    ctx.setLineDash([]);
+
+    // Threshold lines
+    const scale = h / 14; // -7 to +7
+    const threshY1 = midY - this.hRollZ * scale;
+    const threshY2 = midY + this.hRollZ * scale;
+    ctx.strokeStyle = 'rgba(248,113,113,0.3)';
+    ctx.setLineDash([6, 4]);
+    ctx.beginPath(); ctx.moveTo(0, threshY1); ctx.lineTo(w, threshY1); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(0, threshY2); ctx.lineTo(w, threshY2); ctx.stroke();
+    ctx.setLineDash([]);
+
+    // Labels
+    ctx.fillStyle = '#5A6A8A';
+    ctx.font = '10px IBM Plex Mono, monospace';
+    ctx.fillText('+' + this.hRollZ.toFixed(1) + 'σ', 4, threshY1 - 4);
+    ctx.fillText('-' + this.hRollZ.toFixed(1) + 'σ', 4, threshY2 + 12);
+    ctx.fillText('0', 4, midY - 4);
+
+    if (this.zHistory.length < 2) return;
+
+    // Draw z-score line
+    const step = w / this.maxHistory;
+    ctx.beginPath();
+    ctx.strokeStyle = 'var(--cyan)';
+    ctx.lineWidth = 2;
+
+    for (let i = 0; i < this.zHistory.length; i++) {
+      const x = i * step;
+      const y = midY - this.zHistory[i] * scale;
+      if (i === 0) ctx.moveTo(x, y);
+      else ctx.lineTo(x, y);
+    }
+    ctx.stroke();
+
+    // Fill area
+    ctx.lineTo((this.zHistory.length - 1) * step, midY);
+    ctx.lineTo(0, midY);
+    ctx.closePath();
+    ctx.fillStyle = 'rgba(56,189,248,0.06)';
+    ctx.fill();
+
+    // Dots for anomalous points
+    for (let i = 0; i < this.zHistory.length; i++) {
+      const z = this.zHistory[i];
+      if (Math.abs(z) > this.hRollZ) {
+        const x = i * step;
+        const y = midY - z * scale;
+        ctx.beginPath();
+        ctx.arc(x, y, 2.5, 0, Math.PI * 2);
+        ctx.fillStyle = 'rgba(248,113,113,0.7)';
+        ctx.fill();
+      }
+    }
+  }
+
+  tick() {
+    if (!this.running) return;
+
+    const ticksPerFrame = Math.max(1, Math.floor(this.speed / 3));
+
+    for (let t = 0; t < ticksPerFrame; t++) {
+      const z = this.generateZ();
+      this.zHistory.push(z);
+      if (this.zHistory.length > this.maxHistory) this.zHistory.shift();
+
+      const det = this.runDetectors(z);
+      const nFamAnom = this.updateFamilies(det.flagged);
+      this.updateStateMachine(nFamAnom);
+      this.step++;
+
+      this.updateUI(z, det.cusumFlag, det.ewmaFlag, det.rollZFlag, det.spikeFlag, det.nActive, det);
+    }
+
+    this.drawChart();
+
+    const delay = Math.max(30, 200 - this.speed * 18);
+    setTimeout(() => this.tick(), delay);
+  }
+}
+
+// Boot simulator
+let sim;
+document.addEventListener('DOMContentLoaded', () => {
+  sim = new LeakSimulator('sim-canvas');
+});
+
+// Fade-up observer
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); });
+}, { threshold: 0.1 });
+document.querySelectorAll('.fade-up').forEach(el => observer.observe(el));
+
+// Smooth scroll
+document.querySelectorAll('a[href^="#"]').forEach(a => {
+  a.addEventListener('click', e => {
+    e.preventDefault();
+    document.querySelector(a.getAttribute('href'))?.scrollIntoView({ behavior: 'smooth' });
+  });
+});
+</script>
+
+</body>
+</html>
