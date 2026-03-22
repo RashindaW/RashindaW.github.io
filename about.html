@@ -5,15 +5,15 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>About — Rashinda Wijethunga</title>
 <link rel="stylesheet" href="/assets/css/styles.css">
-<meta name="description" content="PhD candidate in ECE at Western University specializing in ML for time-series, spatio-temporal GNNs, and explainability.">
+<meta name="description" content="PhD candidate at Western University building graph neural networks for industrial fault detection and explainable AI systems. 6 peer-reviewed papers, 2 years of industry deployment experience.">
 <meta property="og:type" content="website">
 <meta property="og:title" content="About — Rashinda Wijethunga">
-<meta property="og:description" content="PhD candidate in ECE at Western University specializing in ML for time-series, spatio-temporal GNNs, and explainability.">
+<meta property="og:description" content="PhD candidate at Western University building graph neural networks for industrial fault detection and explainable AI systems.">
 <meta property="og:image" content="https://rashindaw.github.io/assets/img/profile.jpg">
 <meta property="og:url" content="https://rashindaw.github.io/about.html">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="About — Rashinda Wijethunga">
-<meta name="twitter:description" content="PhD candidate in ECE at Western University specializing in ML for time-series, spatio-temporal GNNs, and explainability.">
+<meta name="twitter:description" content="PhD candidate at Western University building graph neural networks for industrial fault detection and explainable AI systems.">
 <meta name="twitter:image" content="https://rashindaw.github.io/assets/img/profile.jpg">
 </head>
 <body>
@@ -46,20 +46,40 @@
 <div class="container" id="main-content">
   <h2 class="h2">About Me</h2>
   <div class="card">
-    <p class="p">I'm a PhD candidate in Electrical and Computer Engineering at Western University (London, ON), specializing in <strong>machine learning for time-series analysis</strong>, <strong>spatio-temporal graph neural networks</strong>, and <strong>explainable AI</strong>. My research focuses on developing robust, interpretable ML systems for early fault detection in real-world applications.</p>
-    <p class="p">Contact: <a href="mailto:rwijethu@uwo.ca">rwijethu@uwo.ca</a>  
+    <p class="p">I'm a PhD candidate in Electrical and Computer Engineering at Western University (London, ON), researching at the intersection of <strong>graph neural networks</strong>, <strong>time-series anomaly detection</strong>, and <strong>explainable AI</strong>. My work spans two interconnected themes: (1) designing GNN architectures that detect early-stage faults in industrial sensor networks, and (2) building counterfactual explanation methods that make those models trustworthy and actionable.</p>
+    <p class="p">Beyond research, I've taken models from paper to production — a leak detection pipeline I built is deployed across Canadian supermarkets, reducing detection latency from months to roughly five days. I have 6 peer-reviewed papers (4 published in Q1 journals and IEEE, 2 under review/revision), over 4 years of graduate research, and 2 years of industry collaboration through Mitacs Accelerate.</p>
+    <p class="p">Contact: <a href="mailto:rwijethu@uwo.ca">rwijethu@uwo.ca</a> &nbsp;|&nbsp; <a href="https://www.linkedin.com/in/rashinda" rel="me">LinkedIn</a> &nbsp;|&nbsp; <a href="https://github.com/rashindaw" rel="me">GitHub</a> &nbsp;|&nbsp; <a href="https://scholar.google.com/citations?hl=en&authuser=2&user=w9NqAQ8AAAAJ" rel="me">Google Scholar</a></p>
   </div>
 </div>
 
+<!-- ===== RESEARCH PILLARS ===== -->
+<div class="container">
+  <div class="card">
+    <div class="kicker">Research Pillars</div>
+    <div class="grid g2">
+      <div>
+        <div class="h3">Graph-Based Anomaly Detection</div>
+        <p class="p">I design GNN architectures that model inter-sensor dependencies for unsupervised fault detection. My flagship work, <strong>DualSTGF</strong>, jointly learns temporal and spectral dependency graphs and uses Jensen–Shannon divergence between views as an early-warning anomaly signal — detecting faults before reconstruction error rises. <strong>DualGraphSHM</strong> fuses physical-topology and feature-correlation graphs for structural damage detection, with a 1D-CNN module that cut training time by 96%.</p>
+      </div>
+      <div>
+        <div class="h3">Counterfactual Explainability</div>
+        <p class="p">I develop methods that make ML decisions interpretable and robust. <strong>CERTS</strong> uses Monte Carlo Tree Search to generate counterfactual explanations that remain valid even when models are retrained — addressing a critical gap in deployed systems. I've also contributed a novel <strong>conic optimization</strong> framework for plausible counterfactual generation using quasi-convex programming (CVXPY/MOSEK). My ongoing thesis work extends counterfactual explainability to spatio-temporal GNNs.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== EDUCATION & EXPERIENCE ===== -->
 <div class="container">
   <div class="grid g2">
     <div class="card">
       <div class="kicker">Education</div>
-      <div class="h3">PhD in Electrical & Computer Engineering</div>
-      <p class="p"><strong>Western University</strong>, London, ON (Sep 2021 – Present)<br>
-      <em>Specialization:</em> Machine Learning, GNNs, Explainability<br>
-      <em>Focus:</em> Dependable AI systems, anomaly detection, counterfactual explanations</p>
-      
+      <div class="h3">PhD in Electrical &amp; Computer Engineering</div>
+      <p class="p"><strong>Western University</strong>, London, ON (Sep 2021 – Jun 2026)<br>
+      <em>CGPA:</em> 92.63/100<br>
+      <em>Dissertation:</em> Graph Neural Networks for Anomaly Detection and Explainable AI<br>
+      <em>Key Courses:</em> Theoretical ML, Convex Optimization, Dependable AI Systems, Probabilistic Generative AI</p>
+
       <div class="h3" style="margin-top:20px">B.Sc. Engineering</div>
       <p class="p"><strong>University of Moratuwa</strong>, Sri Lanka (Dec 2015 – Jan 2020)<br>
       <em>Specialization:</em> Electronic and Telecommunication Engineering<br>
@@ -67,35 +87,37 @@
     </div>
 
     <div class="card">
-      <div class="kicker">Research Focus</div>
-      <div class="h3">Current Research</div>
-      <p class="p"><strong>Mitacs Accelerate Research Intern</strong> at Neelands Group (Phase II: Jan 2025 – Present)<br>
-      Developing spatio-temporal GNN for leak detection in CO₂-based supermarket refrigeration systems with explainability via counterfactual generation.</p>
-      
-      <div class="h3" style="margin-top:20px">Graduate Research</div>
+      <div class="kicker">Industry &amp; Research Experience</div>
+      <div class="h3">Graduate ML Researcher (4+ Years)</div>
       <p class="p"><strong>Western University</strong> (Sep 2021 – Present)<br>
-      • GNN-based time series anomaly detection<br>
-      • Counterfactual explainability for opaque models<br>
-      • Robust ML for infrastructure monitoring</p>
+      Two research streams: graph-based anomaly detection (DualSTGF, DualGraphSHM) and counterfactual explainability (CERTS, Conic CF). Led the anomaly detection component of a cross-domain collaboration on IoT-based pothole detection.</p>
+
+      <div class="h3" style="margin-top:20px">Applied ML Research Intern (2 Years)</div>
+      <p class="p"><strong>Neelands Group</strong> via Mitacs Accelerate, Burlington, ON<br>
+      Phase I (HFC, 2022–2023): Built and deployed a production leak detection pipeline on Azure — CatBoost + SHAP, CI/CD, F1 0.92. Phase II (CO₂, 2025): Designed a fully unsupervised pipeline for transcritical systems; detected 7/8 previously unknown slow leaks in validation.</p>
+
+      <div class="h3" style="margin-top:20px">Systems Engineer (1+ Years)</div>
+      <p class="p"><strong>Millennium IT ESP</strong>, Colombo, Sri Lanka (Mar 2020 – Aug 2021)<br>
+      Migrated Sri Lanka's largest telecom (SLT-Mobitel) from legacy WAN to Cisco SD-WAN and Cisco ACI data centre architecture.</p>
     </div>
   </div>
 </div>
 
 <div class="container">
   <div class="card">
-    <div class="kicker">Skills & Expertise</div>
+    <div class="kicker">Technical Skills</div>
     <div class="grid g3">
       <div>
-        <div class="h3">Programming & ML</div>
-        <p class="p">Python, MATLAB, R, Bash, LaTeX, PyTorch, PyTorch Geometric, TensorFlow, scikit-learn, XGBoost, CatBoost, transformers, HAN</p>
+        <div class="h3">Deep Learning &amp; GNNs</div>
+        <p class="p">PyTorch, PyTorch Geometric, TensorFlow, scikit-learn, XGBoost, CatBoost, LightGBM, Hugging Face Transformers. GNN/GAT/GCN architectures, Transformers, CNN, LSTM/GRU.</p>
       </div>
       <div>
-        <div class="h3">Data Engineering</div>
-        <p class="p">Polars, DuckDB, batch/stream processing, robust pipelines</p>
+        <div class="h3">Explainable &amp; Generative AI</div>
+        <p class="p">Counterfactual explanations, SHAP, MCTS, robustness evaluation. Convex/quasi-convex optimization (CVXPY, MOSEK). LLM-based multi-agent orchestration (Google ADK), RAG, MCP, A2A.</p>
       </div>
       <div>
-        <div class="h3">MLOps & Cloud</div>
-        <p class="p">Azure Functions, pipelines, deployment monitoring, validation, CI/CD (GitHub Actions), scheduled retraining</p>
+        <div class="h3">MLOps &amp; Data Engineering</div>
+        <p class="p">Azure Functions, Docker, CI/CD (GitHub Actions), Weights &amp; Biases. Apache Spark, Polars, DuckDB. End-to-end deployment, Dash/Plotly dashboards.</p>
       </div>
     </div>
   </div>
@@ -103,23 +125,32 @@
 
 <div class="container">
   <div class="card">
-    <div class="kicker">Selected Publications</div>
+    <div class="kicker">Publications</div>
+    <p class="p" style="margin-bottom:16px"><strong>6 peer-reviewed papers</strong> &nbsp;|&nbsp; 4 published (3 Q1 journals, 1 IEEE conference) &nbsp;|&nbsp; 2 under review/revision &nbsp;|&nbsp; *Equal contribution</p>
     <table class="table">
       <tr><td>
-        <div class="h3">Robust and efficient dual-graph neural networks for structural damage detection</div>
-        <small class="muted">Engineering Structures (2025) • <a href="https://doi.org/10.1016/j.engstruct.2025.121265" target="_blank">DOI: 10.1016/j.engstruct.2025.121265</a></small>
+        <div class="h3">Dual-View Spectral-Temporal Graph Networks with Adaptive Edge Learning for Incipient Fault Detection</div>
+        <small class="muted">Information Fusion (IF ~15.5) • Under review</small>
       </td></tr>
       <tr><td>
         <div class="h3">Evaluating the Robustness of Counterfactual Generating Methods for Tree-based Ensembles</div>
-        <small class="muted">Under review</small>
+        <small class="muted">IEEE Canadian Journal of Electrical and Computer Engineering (CJECE) • Minor revision</small>
+      </td></tr>
+      <tr><td>
+        <div class="h3">Robust and efficient dual-graph neural networks for structural damage detection and localization</div>
+        <small class="muted">Engineering Structures, 343 (2025) • <a href="https://doi.org/10.1016/j.engstruct.2025.121265" target="_blank">DOI</a></small>
       </td></tr>
       <tr><td>
         <div class="h3">Expert evaluation system for pothole defect detection</div>
-        <small class="muted">Expert Systems with Applications (2025) • <a href="https://doi.org/10.1016/j.eswa.2025.127280" target="_blank">DOI: 10.1016/j.eswa.2025.127280</a></small>
+        <small class="muted">Expert Systems with Applications, 277 (2025) • <a href="https://doi.org/10.1016/j.eswa.2025.127280" target="_blank">DOI</a></small>
       </td></tr>
       <tr><td>
         <div class="h3">Precision leak detection in supermarket refrigeration systems integrating categorical gradient boosting</div>
-        <small class="muted">Energies (2024) • <a href="https://doi.org/10.3390/en17030736" target="_blank">DOI: 10.3390/en17030736</a></small>
+        <small class="muted">Energies, 17(3) (2024) • <a href="https://doi.org/10.3390/en17030736" target="_blank">DOI</a></small>
+      </td></tr>
+      <tr><td>
+        <div class="h3">A Novel Objective Function for Counterfactual Explanations Using Conic Optimization</div>
+        <small class="muted">IEEE ICAC 2025 • *Equal contribution</small>
       </td></tr>
     </table>
   </div>
@@ -128,46 +159,24 @@
 <div class="container">
   <div class="grid g2">
     <div class="card">
-      <div class="kicker">Professional Experience</div>
-      <div class="h3">Systems Engineer</div>
-      <p class="p"><strong>Millennium IT ESP</strong>, Colombo, Sri Lanka (Mar 2020 – Aug 2021)<br>
-      Migrated Sri Lanka's largest telecom from legacy WAN to Cisco SD-WAN; enabled dynamic routing, optimized cloud connectivity, and improved performance/security.</p>
-      
-      <div class="h3" style="margin-top:20px">Systems Engineer, Intern</div>
-      <p class="p"><strong>Millennium IT ESP</strong> (Jun 2018 – Dec 2018)</p>
-    </div>
-
-    <div class="card">
-      <div class="kicker">Teaching & Mentoring</div>
-      <div class="h3">Graduate Teaching Assistant</div>
-      <p class="p"><strong>Western University</strong> (Jan 2022 – Present)<br>
-      • ECE 9039: Machine Learning (Graduate)<br>
-      • ECE 3316: Web Technologies (Undergrad)<br>
-      • ECE 3314: Computer Networks Applications</p>
-    </div>
-  </div>
-</div>
-
-<div class="container">
-  <div class="grid g2">
-    <div class="card">
-      <div class="kicker">Awards & Grants</div>
+      <div class="kicker">Awards &amp; Grants</div>
       <ul style="margin:0;padding-left:20px">
         <li>Mitacs Accelerate Scholarship (Phase II) — $40,000 (May 2025 – Apr 2026)</li>
         <li>Mitacs Accelerate Scholarship (Phase I) — $20,000 (May 2022 – Apr 2025)</li>
-        <li>Scholarship for Fully Funded PhD, Western University (Sep 2021 – Sep 2026)</li>
-        <li>SLIOT Innovation Open Category — 1st Place (LKR 50,000); 2nd Place (LKR 30,000) (2019, 2020)</li>
-        <li>IEEE ComSoc Student Competition — Honorrary Mention (World Top 15) (2019)</li>
+        <li>Fully Funded PhD Scholarship, Western University (Sep 2021 – Sep 2026)</li>
+        <li>SLIOT Innovation Open Category — 1st Place (2019) &amp; 2nd Place (2020)</li>
+        <li>IEEE ComSoc Student Competition — Honorary Mention, World Top 15 (2019)</li>
       </ul>
     </div>
 
     <div class="card">
-      <div class="kicker">Community Involvement</div>
+      <div class="kicker">Teaching</div>
+      <div class="h3">Graduate Teaching Assistant</div>
+      <p class="p"><strong>Western University</strong> (Jan 2022 – Present)</p>
       <ul style="margin:0;padding-left:20px">
-        <li>Judge at Thames Valley Science and Engineering Fair (TVSEF), London, ON (Mar 2024)</li>
-        <li>Poster Judge at Inspiring Diversity in STEM (IDiSTEM) Conference, Western University (2022)</li>
-        <li>Team Member at AllColombo South — Managed renovating and teaching in underprivileged school (2018)</li>
-        <li>Tournament Champion at Ojayz Cricket Team, London, ON (Jul 2025)</li>
+        <li>ECE 9039: Machine Learning (Graduate)</li>
+        <li>ECE 3316: Web Technologies (Undergraduate)</li>
+        <li>ECE 3314: Computer Networks Applications (Undergraduate)</li>
       </ul>
     </div>
   </div>
@@ -175,27 +184,28 @@
 
 <div class="container">
   <div class="card">
-    <div class="kicker">Talks & Presentations</div>
+    <div class="kicker">Talks &amp; Presentations</div>
     <table class="table">
-      <!-- TODO: Add your talk entries below. Copy a <tr> block for each new talk. -->
       <tr><td>
         <div class="h3">Spatio-Temporal GNNs for Industrial Fault Detection</div>
         <small class="muted">Western University ECE Seminar • 2025</small>
-        <div class="card-links" style="margin-top:8px">
-          <!-- TODO: Add slides/video link when available -->
-          <a href="#" class="card-link">Slides</a>
-        </div>
       </td></tr>
       <tr><td>
         <div class="h3">Counterfactual Explanations for Graph Neural Networks</div>
         <small class="muted">Research Group Presentation • 2024</small>
-        <div class="card-links" style="margin-top:8px">
-          <!-- TODO: Add slides/video link when available -->
-          <a href="#" class="card-link">Slides</a>
-        </div>
       </td></tr>
     </table>
-    <small class="muted"><!-- TODO: Add more talks as they happen --></small>
+  </div>
+</div>
+
+<div class="container">
+  <div class="card">
+    <div class="kicker">Community Involvement</div>
+    <ul style="margin:0;padding-left:20px">
+      <li>Judge at Thames Valley Science and Engineering Fair (TVSEF), London, ON (Mar 2024)</li>
+      <li>Poster Judge at Inspiring Diversity in STEM (IDiSTEM) Conference, Western University (2022)</li>
+      <li>Team Member at AllColombo South — Managed renovating and teaching in underprivileged school (2018)</li>
+    </ul>
   </div>
 </div>
 
